@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
@@ -13,20 +12,22 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create Owner account
-        User::create([
-            'name' => 'Pemilik AA Seafood',
-            'email' => 'owner@aaseafood.com',
-            'password' => Hash::make('password123'),
-            'role' => 'owner',
-        ]);
+        User::updateOrCreate(
+            ['email' => 'owner@aaseafood.com'],
+            [
+                'name' => 'Owner AA Seafood',
+                'password' => 'owner123',
+                'role' => User::ROLE_OWNER,
+            ]
+        );
 
-        // Create Admin Gudang account
-        User::create([
-            'name' => 'Admin Gudang',
-            'email' => 'admin@aaseafood.com',
-            'password' => Hash::make('password123'),
-            'role' => 'admin_gudang',
-        ]);
+        User::updateOrCreate(
+            ['email' => 'admin@aaseafood.com'],
+            [
+                'name' => 'Admin Gudang',
+                'password' => 'admin123',
+                'role' => User::ROLE_ADMIN_GUDANG,
+            ]
+        );
     }
 }

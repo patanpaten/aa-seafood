@@ -26,13 +26,35 @@
                     </div>
                 @endif
 
+                <form action="{{ route('sales.create') }}" method="GET" class="mb-8">
+                    <div class="p-6 bg-slate-50 rounded-[2rem] border border-slate-100">
+                        <div class="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-4 items-end">
+                            <div>
+                                <label for="group" class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">Filter Grup Kategori</label>
+                                <select name="group" id="group" class="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition font-semibold text-slate-700 appearance-none">
+                                    <option value="">Semua Grup</option>
+                                    @foreach($categoryGroups as $groupName)
+                                        <option value="{{ $groupName }}" @selected($selectedGroup === $groupName)>{{ $groupName }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <button type="submit" class="px-6 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-extrabold uppercase tracking-widest text-xs transition-all">
+                                Terapkan
+                            </button>
+                            <a href="{{ route('sales.create') }}" class="px-6 py-4 bg-white hover:bg-slate-100 text-slate-500 rounded-2xl font-extrabold uppercase tracking-widest text-xs transition-all text-center border border-slate-200">
+                                Reset
+                            </a>
+                        </div>
+                    </div>
+                </form>
+
                 <form action="{{ route('sales.store') }}" method="POST" class="space-y-8">
                     @csrf
                     
                     <div class="space-y-6">
                         <div>
                             <label for="date" class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">Tanggal Penjualan</label>
-                            <input type="date" name="date" id="date" value="{{ date('Y-m-d') }}" 
+                            <input type="date" name="date" id="date" value="{{ old('date', date('Y-m-d')) }}" 
                                 class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition font-semibold text-slate-700" required>
                         </div>
 
@@ -54,9 +76,29 @@
                             <select name="category_id" id="category_id" 
                                 class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition font-semibold text-slate-700 appearance-none" required>
                                 <option value="">-- Pilih --</option>
-                                @foreach($categories as $category)
-                                    <option value="{{ $category->id }}" {{ old('category_id') == $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
-                                @endforeach
+                                @forelse($groupedCategories as $groupName => $groupCategories)
+                                    <optgroup label="{{ $groupName }}">
+                                        @foreach($groupCategories as $category)
+                                            <option value="{{ $category->id }}"
+                                                data-retail-price="{{ $category->retail_price ?? $category->price }}"
+                                                data-wholesale-price="{{ $category->wholesale_price ?? $category->price }}"
+                                                @selected(old('category_id') == $category->id)>
+                                                {{ $category->name }}
+                                            </option>
+                                        @endforeach
+                                    </optgroup>
+                                @empty
+                                    <option value="" disabled>Tidak ada item untuk grup ini</option>
+                                @endforelse
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="price_type" class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">Tipe Harga</label>
+                            <select name="price_type" id="price_type"
+                                class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition font-semibold text-slate-700 appearance-none" required>
+                                <option value="eceran" @selected(old('price_type', 'eceran') === 'eceran')>Eceran</option>
+                                <option value="grosir" @selected(old('price_type') === 'grosir')>Grosir</option>
                             </select>
                         </div>
 
@@ -86,3 +128,31 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const categorySelect = document.getElementById('category_id');
+        const priceTypeSelect = document.getElementById('price_type');
+        const priceInput = document.getElementById('price_per_kg');
+
+        function syncDefaultPrice() {
+            const selectedOption = categorySelect.options[categorySelect.selectedIndex];
+            const priceType = priceTypeSelect.value;
+            const defaultPrice = priceType === 'grosir'
+                ? selectedOption?.dataset?.wholesalePrice
+                : selectedOption?.dataset?.retailPrice;
+
+            if (! defaultPrice) {
+                return;
+            }
+
+            priceInput.value = parseFloat(defaultPrice).toFixed(2);
+        }
+
+        categorySelect.addEventListener('change', syncDefaultPrice);
+        priceTypeSelect.addEventListener('change', syncDefaultPrice);
+        syncDefaultPrice();
+    });
+</script>
+@endpush

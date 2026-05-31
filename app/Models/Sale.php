@@ -10,6 +10,7 @@ class Sale extends Model
         'date',
         'partner_id',
         'category_id',
+        'price_type',
         'quantity_sold_kg',
         'price_per_kg',
         'total_price',

@@ -24,10 +24,22 @@ class AuthController extends Controller
      */
     public function login(Request $request): RedirectResponse
     {
-        $credentials = $request->validate([
-            'email' => ['required', 'email'],
+        $validated = $request->validate([
+            'login' => ['required', 'string'],
             'password' => ['required'],
         ]);
+
+        $login = trim(strtolower($validated['login']));
+        $email = match ($login) {
+            'owner' => 'owner@aaseafood.com',
+            'admin', 'admin_gudang' => 'admin@aaseafood.com',
+            default => $validated['login'],
+        };
+
+        $credentials = [
+            'email' => $email,
+            'password' => $validated['password'],
+        ];
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
@@ -36,8 +48,8 @@ class AuthController extends Controller
         }
 
         return back()->withErrors([
-            'email' => 'Email atau password salah.',
-        ])->onlyInput('email');
+            'login' => 'Akun atau password salah.',
+        ])->onlyInput('login');
     }
 
     /**

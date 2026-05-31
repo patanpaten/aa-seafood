@@ -16,6 +16,38 @@
                     </div>
                 </div>
 
+                @if($errors->any())
+                    <div class="mb-8 p-4 bg-rose-50 border border-rose-100 text-rose-700 rounded-2xl">
+                        <ul class="list-disc list-inside text-sm font-medium">
+                            @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
+                <form action="{{ route('stock-adjustments.create') }}" method="GET" class="mb-8">
+                    <div class="p-6 bg-slate-50 rounded-[2rem] border border-slate-100">
+                        <div class="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-4 items-end">
+                            <div>
+                                <label for="group" class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">Filter Grup Kategori</label>
+                                <select name="group" id="group" class="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition font-semibold text-slate-700 appearance-none">
+                                    <option value="">Semua Grup</option>
+                                    @foreach($categoryGroups as $groupName)
+                                        <option value="{{ $groupName }}" @selected($selectedGroup === $groupName)>{{ $groupName }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <button type="submit" class="px-6 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-extrabold uppercase tracking-widest text-xs transition-all">
+                                Terapkan
+                            </button>
+                            <a href="{{ route('stock-adjustments.create') }}" class="px-6 py-4 bg-white hover:bg-slate-100 text-slate-500 rounded-2xl font-extrabold uppercase tracking-widest text-xs transition-all text-center border border-slate-200">
+                                Reset
+                            </a>
+                        </div>
+                    </div>
+                </form>
+
                 <form action="{{ route('stock-adjustments.store') }}" method="POST" class="space-y-8">
                     @csrf
                     
@@ -25,10 +57,26 @@
                             <select name="category_id" id="category_id" 
                                 class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition font-semibold text-slate-700 appearance-none" required>
                                 <option value="">-- Pilih Jenis --</option>
-                                @foreach($categories as $category)
-                                    <option value="{{ $category->id }}" data-stock="{{ $category->current_stock }}">{{ $category->name }}</option>
-                                @endforeach
+                                @forelse($groupedCategories as $groupName => $groupCategories)
+                                    <optgroup label="{{ $groupName }}">
+                                        @foreach($groupCategories as $category)
+                                            <option value="{{ $category->id }}"
+                                                data-stock="{{ $category->current_stock }}"
+                                                data-group="{{ $groupName }}"
+                                                @selected(old('category_id') == $category->id)>
+                                                {{ $category->name }}
+                                            </option>
+                                        @endforeach
+                                    </optgroup>
+                                @empty
+                                    <option value="" disabled>Tidak ada item untuk grup ini</option>
+                                @endforelse
                             </select>
+                        </div>
+
+                        <div id="category-group-info" class="hidden p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-2">Grup Item</p>
+                            <span id="category-group-value" class="inline-flex items-center px-3 py-2 bg-white rounded-xl border border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-widest"></span>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -42,7 +90,7 @@
                             <div class="p-6 bg-orange-50/50 rounded-2xl border border-orange-100">
                                 <label for="actual_stock" class="block text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-2 ml-1">Stok Fisik Riil</label>
                                 <div class="relative">
-                                    <input type="number" step="0.01" name="actual_stock" id="actual_stock" placeholder="0.00"
+                                    <input type="number" step="0.01" name="actual_stock" id="actual_stock" value="{{ old('actual_stock') }}" placeholder="0.00"
                                         class="w-full bg-transparent text-3xl font-black text-orange-600 outline-none placeholder-orange-200" required>
                                     <span class="absolute right-0 top-1/2 -translate-y-1/2 text-sm font-bold text-orange-300 uppercase">kg</span>
                                 </div>
@@ -52,7 +100,7 @@
                         <div>
                             <label for="reason" class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">Alasan Penyesuaian</label>
                             <textarea name="reason" id="reason" rows="3" placeholder="Contoh: Seafood busuk, kesalahan timbangan, dll"
-                                class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition font-semibold text-slate-700" required></textarea>
+                                class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition font-semibold text-slate-700" required>{{ old('reason') }}</textarea>
                         </div>
                     </div>
 
@@ -75,21 +123,30 @@
     document.addEventListener('DOMContentLoaded', function() {
         const categorySelect = document.getElementById('category_id');
         const stockDisplay = document.getElementById('current_stock_display');
+        const groupInfo = document.getElementById('category-group-info');
+        const groupValue = document.getElementById('category-group-value');
 
         categorySelect.addEventListener('change', function() {
             const selectedOption = this.options[this.selectedIndex];
             const stock = selectedOption.getAttribute('data-stock');
+            const group = selectedOption.getAttribute('data-group');
             
             if (stock) {
                 stockDisplay.textContent = parseFloat(stock).toFixed(2);
                 stockDisplay.classList.remove('text-slate-300');
                 stockDisplay.classList.add('text-slate-700');
+                groupValue.textContent = group;
+                groupInfo.classList.remove('hidden');
             } else {
                 stockDisplay.textContent = '0.00';
                 stockDisplay.classList.add('text-slate-300');
                 stockDisplay.classList.remove('text-slate-700');
+                groupValue.textContent = '';
+                groupInfo.classList.add('hidden');
             }
         });
+
+        categorySelect.dispatchEvent(new Event('change'));
     });
 </script>
 @endpush

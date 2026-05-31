@@ -14,13 +14,30 @@ class SaleController extends Controller
     /**
      * Show the form for creating a new sale.
      */
-    public function create()
+    public function create(Request $request)
     {
-        // Get partners and categories for dropdowns
+        $selectedGroup = $request->query('group');
         $partners = Partner::orderBy('name')->get();
-        $categories = Category::orderBy('name')->get();
-        
-        return view('sales.create', compact('partners', 'categories'));
+        $categoryGroups = Category::query()
+            ->select('group_name')
+            ->whereNotNull('group_name')
+            ->distinct()
+            ->orderBy('group_name')
+            ->pluck('group_name');
+        $categories = Category::query()
+            ->when($selectedGroup, fn ($query) => $query->where('group_name', $selectedGroup))
+            ->orderBy('group_name')
+            ->orderBy('name')
+            ->get();
+        $groupedCategories = $categories->groupBy(fn ($category) => $category->group_name ?: 'Lainnya');
+
+        return view('sales.create', compact(
+            'partners',
+            'categories',
+            'groupedCategories',
+            'categoryGroups',
+            'selectedGroup'
+        ));
     }
 
     /**
@@ -32,6 +49,7 @@ class SaleController extends Controller
             'date' => 'required|date',
             'partner_id' => 'required|exists:partners,id',
             'category_id' => 'required|exists:categories,id',
+            'price_type' => 'required|in:eceran,grosir',
             'quantity_sold_kg' => 'required|numeric|min:0.01',
             'price_per_kg' => 'required|numeric|min:0',
         ]);
@@ -57,6 +75,7 @@ class SaleController extends Controller
                 'date' => $validated['date'],
                 'partner_id' => $validated['partner_id'],
                 'category_id' => $validated['category_id'],
+                'price_type' => $validated['price_type'],
                 'quantity_sold_kg' => $validated['quantity_sold_kg'],
                 'price_per_kg' => $validated['price_per_kg'],
                 'total_price' => $totalPrice,

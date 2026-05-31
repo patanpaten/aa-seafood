@@ -14,12 +14,16 @@
         </a>
     </div>
 
-    <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden max-w-4xl">
+    <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
                 <thead>
                     <tr class="bg-slate-50/50 border-b border-slate-100">
-                        <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Nama Kategori Seafood</th>
+                        <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Item Seafood</th>
+                        <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Grup</th>
+                        <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Harga Eceran</th>
+                        <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Harga Grosir</th>
+                        <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Gambar</th>
                         <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] text-center">Aksi</th>
                     </tr>
                 </thead>
@@ -28,6 +32,26 @@
                     <tr class="hover:bg-slate-50/50 transition-colors group">
                         <td class="px-8 py-6">
                             <span class="font-bold text-slate-700 group-hover:text-blue-600 transition-colors">{{ $category->name }}</span>
+                        </td>
+                        <td class="px-8 py-6">
+                            <span class="inline-flex items-center px-3 py-2 bg-slate-100 text-slate-600 rounded-xl text-xs font-bold uppercase tracking-widest">
+                                {{ $category->group_name }}
+                            </span>
+                        </td>
+                        <td class="px-8 py-6">
+                            <span class="text-sm font-bold text-slate-500">Rp {{ number_format($category->retail_price ?? $category->price, 0, ',', '.') }}</span>
+                        </td>
+                        <td class="px-8 py-6">
+                            <span class="text-sm font-bold text-slate-500">Rp {{ number_format($category->wholesale_price ?? $category->price, 0, ',', '.') }}</span>
+                        </td>
+                        <td class="px-8 py-6">
+                            @if($category->image_url)
+                                <img src="{{ $category->image_url }}" alt="{{ $category->name }}" class="w-14 h-14 rounded-2xl object-cover border border-slate-200">
+                            @else
+                                <div class="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-300">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-10h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                </div>
+                            @endif
                         </td>
                         <td class="px-8 py-6 text-center">
                             <div class="flex items-center justify-center space-x-3">
@@ -45,7 +69,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="2" class="px-8 py-12 text-center">
+                        <td colspan="6" class="px-8 py-12 text-center">
                             <div class="flex flex-col items-center">
                                 <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 mb-4">
                                     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H4a2 2 0 00-2 2v7m18 0v5a2 2 0 01-2 2H4a2 2 0 01-2-2v-5m18 0l-2-2m-2-2l-2-2m-2-2l-2-2m-2-2L4 13"></path></svg>

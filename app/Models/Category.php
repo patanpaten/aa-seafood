@@ -3,10 +3,24 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class Category extends Model
 {
-    protected $fillable = ['name'];
+    protected $fillable = [
+        'name',
+        'group_name',
+        'price',
+        'retail_price',
+        'wholesale_price',
+        'image_path',
+    ];
+
+    protected $casts = [
+        'price' => 'decimal:2',
+        'retail_price' => 'decimal:2',
+        'wholesale_price' => 'decimal:2',
+    ];
 
     public function incomingStocks()
     {
@@ -34,5 +48,14 @@ class Category extends Model
         $adjustments = $this->adjustments()->sum('difference');
 
         return $incoming - $sales + $adjustments;
+    }
+
+    public function getImageUrlAttribute(): ?string
+    {
+        if (! $this->image_path) {
+            return null;
+        }
+
+        return Storage::disk('public')->url($this->image_path);
     }
 }

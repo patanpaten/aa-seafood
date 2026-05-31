@@ -14,12 +14,35 @@
         </a>
     </div>
 
+    <form action="{{ route('stock-adjustments.index') }}" method="GET" class="mb-8">
+        <div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 p-6">
+            <div class="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-4 items-end">
+                <div>
+                    <label for="group" class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">Filter Grup Kategori</label>
+                    <select name="group" id="group" class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition font-semibold text-slate-700 appearance-none">
+                        <option value="">Semua Grup</option>
+                        @foreach($categoryGroups as $groupName)
+                            <option value="{{ $groupName }}" @selected($selectedGroup === $groupName)>{{ $groupName }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <button type="submit" class="px-6 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-extrabold uppercase tracking-widest text-xs transition-all">
+                    Filter
+                </button>
+                <a href="{{ route('stock-adjustments.index') }}" class="px-6 py-4 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-2xl font-extrabold uppercase tracking-widest text-xs transition-all text-center">
+                    Reset
+                </a>
+            </div>
+        </div>
+    </form>
+
     <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
                 <thead>
                     <tr class="bg-slate-50/50 border-b border-slate-100">
                         <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Tanggal</th>
+                        <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Grup</th>
                         <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Jenis Seafood</th>
                         <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Stok Sistem</th>
                         <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Stok Fisik</th>
@@ -33,6 +56,11 @@
                     <tr class="hover:bg-slate-50/50 transition-colors group">
                         <td class="px-8 py-6">
                             <span class="text-sm font-medium text-slate-500">{{ $adj->created_at->format('d/m/Y H:i') }}</span>
+                        </td>
+                        <td class="px-8 py-6">
+                            <span class="inline-flex items-center px-3 py-2 bg-slate-100 text-slate-500 rounded-xl text-xs font-bold uppercase tracking-widest">
+                                {{ $adj->category->group_name }}
+                            </span>
                         </td>
                         <td class="px-8 py-6">
                             <span class="font-bold text-slate-700 group-hover:text-blue-600 transition-colors">{{ $adj->category->name }}</span>
@@ -57,7 +85,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="px-8 py-12 text-center">
+                        <td colspan="8" class="px-8 py-12 text-center">
                             <div class="flex flex-col items-center">
                                 <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 mb-4">
                                     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H4a2 2 0 00-2 2v7m18 0v5a2 2 0 01-2 2H4a2 2 0 01-2-2v-5m18 0l-2-2m-2-2l-2-2m-2-2l-2-2m-2-2L4 13"></path></svg>

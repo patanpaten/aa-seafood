@@ -13,19 +13,53 @@ class StockAdjustmentController extends Controller
     /**
      * Display a listing of the stock adjustments.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $adjustments = StockAdjustment::with(['category', 'user'])->latest()->paginate(10);
-        return view('stock_adjustments.index', compact('adjustments'));
+        $selectedGroup = $request->query('group');
+        $categoryGroups = Category::query()
+            ->select('group_name')
+            ->whereNotNull('group_name')
+            ->distinct()
+            ->orderBy('group_name')
+            ->pluck('group_name');
+
+        $adjustments = StockAdjustment::with(['category', 'user'])
+            ->when($selectedGroup, function ($query) use ($selectedGroup) {
+                $query->whereHas('category', fn ($categoryQuery) => $categoryQuery->where('group_name', $selectedGroup));
+            })
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('stock_adjustments.index', compact('adjustments', 'categoryGroups', 'selectedGroup'));
     }
 
     /**
      * Show the form for creating a new stock adjustment.
      */
-    public function create()
+    public function create(Request $request)
     {
-        $categories = Category::all();
-        return view('stock_adjustments.create', compact('categories'));
+        $selectedGroup = $request->query('group');
+        $categoryGroups = Category::query()
+            ->select('group_name')
+            ->whereNotNull('group_name')
+            ->distinct()
+            ->orderBy('group_name')
+            ->pluck('group_name');
+
+        $categories = Category::query()
+            ->when($selectedGroup, fn ($query) => $query->where('group_name', $selectedGroup))
+            ->orderBy('group_name')
+            ->orderBy('name')
+            ->get();
+        $groupedCategories = $categories->groupBy(fn ($category) => $category->group_name ?: 'Lainnya');
+
+        return view('stock_adjustments.create', compact(
+            'categories',
+            'groupedCategories',
+            'categoryGroups',
+            'selectedGroup'
+        ));
     }
 
     /**

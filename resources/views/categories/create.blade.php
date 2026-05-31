@@ -16,14 +16,63 @@
                     </div>
                 </div>
 
-                <form action="{{ route('categories.store') }}" method="POST" class="space-y-8">
+                @if($errors->any())
+                    <div class="mb-8 p-4 bg-rose-50 border border-rose-100 text-rose-700 rounded-2xl">
+                        <ul class="list-disc list-inside text-sm font-medium">
+                            @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
+                <form action="{{ route('categories.store') }}" method="POST" enctype="multipart/form-data" class="space-y-8">
                     @csrf
                     
                     <div class="space-y-6">
                         <div>
-                            <label for="name" class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">Nama Kategori</label>
-                            <input type="text" name="name" id="name" placeholder="Masukkan nama kategori (misal: Udang, Cumi, dll)"
+                            <label for="group_name" class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">Grup Kategori</label>
+                            <input type="text" name="group_name" id="group_name" list="group_name_options" value="{{ old('group_name') }}" placeholder="Contoh: Kerang, Udang, Ikan"
                                 class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition font-semibold text-slate-700" required>
+                            <datalist id="group_name_options">
+                                @foreach($categoryGroups as $groupName)
+                                    <option value="{{ $groupName }}"></option>
+                                @endforeach
+                            </datalist>
+                            <p class="text-xs text-slate-400 mt-2 ml-1">Dipakai untuk pengelompokan dropdown, misalnya semua item kerang masuk ke grup "Kerang".</p>
+                        </div>
+
+                        <div>
+                            <label for="name" class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">Nama Item Seafood</label>
+                            <input type="text" name="name" id="name" value="{{ old('name') }}" placeholder="Contoh: Kerang Hijau, Kerang Dara, Udang Windu"
+                                class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition font-semibold text-slate-700" required>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="retail_price" class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">Harga Eceran</label>
+                                <div class="relative">
+                                    <span class="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 font-black">Rp</span>
+                                    <input type="number" step="0.01" min="0" name="retail_price" id="retail_price" value="{{ old('retail_price') }}" placeholder="0"
+                                        class="w-full pl-14 pr-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition font-semibold text-slate-700" required>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="wholesale_price" class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">Harga Grosir</label>
+                                <div class="relative">
+                                    <span class="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 font-black">Rp</span>
+                                    <input type="number" step="0.01" min="0" name="wholesale_price" id="wholesale_price" value="{{ old('wholesale_price') }}" placeholder="0"
+                                        class="w-full pl-14 pr-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition font-semibold text-slate-700" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="image" class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">Gambar Item</label>
+                            <input type="file" name="image" id="image" accept=".jpg,.jpeg,.png,.webp"
+                                class="w-full px-5 py-4 bg-slate-50 border border-dashed border-slate-300 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition font-semibold text-slate-500 file:mr-4 file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:rounded-xl file:text-blue-600 file:font-bold hover:file:bg-blue-100">
+                            <p class="text-xs text-slate-400 mt-2 ml-1">Opsional. Format: JPG, PNG, atau WEBP. Maksimal 2MB.</p>
                         </div>
                     </div>
 

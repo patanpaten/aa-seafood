@@ -12,11 +12,32 @@ class IncomingStockController extends Controller
     /**
      * Show the form for creating a new incoming stock.
      */
-    public function create()
+    public function create(Request $request)
     {
         $suppliers = Supplier::orderBy('name')->get();
-        $categories = Category::orderBy('name')->get();
-        return view('incoming_stocks.create', compact('suppliers', 'categories'));
+        $selectedGroup = $request->query('group');
+        $categoryGroups = Category::query()
+            ->select('group_name')
+            ->whereNotNull('group_name')
+            ->distinct()
+            ->orderBy('group_name')
+            ->pluck('group_name');
+
+        $categories = Category::query()
+            ->when($selectedGroup, fn ($query) => $query->where('group_name', $selectedGroup))
+            ->orderBy('group_name')
+            ->orderBy('name')
+            ->get();
+
+        $groupedCategories = $categories->groupBy(fn ($category) => $category->group_name ?: 'Lainnya');
+
+        return view('incoming_stocks.create', compact(
+            'suppliers',
+            'categories',
+            'groupedCategories',
+            'categoryGroups',
+            'selectedGroup'
+        ));
     }
 
     /**
