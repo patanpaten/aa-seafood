@@ -2,7 +2,6 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -12,19 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('categories', function (Blueprint $table) {
-            $table->decimal('retail_price', 15, 2)->default(0)->after('price');
-            $table->decimal('wholesale_price', 15, 2)->default(0)->after('retail_price');
-        });
-
-        DB::table('categories')->update([
-            'retail_price' => DB::raw('price'),
-            'wholesale_price' => DB::raw('price'),
-        ]);
-
-        Schema::table('sales', function (Blueprint $table) {
-            $table->enum('price_type', ['eceran', 'grosir'])->default('eceran')->after('category_id');
-        });
+        if (! Schema::hasColumn('sales', 'price_type')) {
+            Schema::table('sales', function (Blueprint $table) {
+                $table->enum('price_type', ['eceran', 'grosir'])->default('eceran')->after('category_id');
+            });
+        }
     }
 
     /**

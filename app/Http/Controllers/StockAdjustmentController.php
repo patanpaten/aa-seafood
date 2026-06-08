@@ -13,52 +13,29 @@ class StockAdjustmentController extends Controller
     /**
      * Display a listing of the stock adjustments.
      */
-    public function index(Request $request)
+    public function index()
     {
-        $selectedGroup = $request->query('group');
-        $categoryGroups = Category::query()
-            ->select('group_name')
-            ->whereNotNull('group_name')
-            ->distinct()
-            ->orderBy('group_name')
-            ->pluck('group_name');
-
         $adjustments = StockAdjustment::with(['category', 'user'])
-            ->when($selectedGroup, function ($query) use ($selectedGroup) {
-                $query->whereHas('category', fn ($categoryQuery) => $categoryQuery->where('group_name', $selectedGroup));
-            })
             ->latest()
-            ->paginate(10)
-            ->withQueryString();
+            ->paginate(10);
 
-        return view('stock_adjustments.index', compact('adjustments', 'categoryGroups', 'selectedGroup'));
+        return view('stock_adjustments.index', compact('adjustments'));
     }
 
     /**
      * Show the form for creating a new stock adjustment.
      */
-    public function create(Request $request)
+    public function create()
     {
-        $selectedGroup = $request->query('group');
-        $categoryGroups = Category::query()
-            ->select('group_name')
-            ->whereNotNull('group_name')
-            ->distinct()
-            ->orderBy('group_name')
-            ->pluck('group_name');
-
         $categories = Category::query()
-            ->when($selectedGroup, fn ($query) => $query->where('group_name', $selectedGroup))
             ->orderBy('group_name')
             ->orderBy('name')
             ->get();
-        $groupedCategories = $categories->groupBy(fn ($category) => $category->group_name ?: 'Lainnya');
+        $groupedCategories = $categories->groupBy(fn ($category) => $category->display_group_name ?: 'Lainnya');
 
         return view('stock_adjustments.create', compact(
             'categories',
-            'groupedCategories',
-            'categoryGroups',
-            'selectedGroup'
+            'groupedCategories'
         ));
     }
 
@@ -90,6 +67,6 @@ class StockAdjustmentController extends Controller
         });
 
         return redirect()->route('stock-adjustments.index')
-            ->with('success', "Stok Opname untuk {$category->name} berhasil disimpan. Selisih: " . number_format($difference, 2) . " kg.");
+            ->with('success', "Hasil cek stok untuk {$category->name} berhasil disimpan. Selisih: " . number_format($difference, 2) . " kg.");
     }
 }

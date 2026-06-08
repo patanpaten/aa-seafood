@@ -1,40 +1,18 @@
 @extends('layouts.app')
 
-@section('title', 'Riwayat Stock Opname')
+@section('title', 'Riwayat Cek Stok')
 
 @section('content')
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
         <div>
-            <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight uppercase">Riwayat Stock Opname</h1>
-            <p class="text-slate-500 font-medium text-sm mt-1">Pantau penyesuaian stok fisik vs sistem.</p>
+            <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight uppercase">Riwayat Cek Stok</h1>
+            <p class="text-slate-500 font-medium text-sm mt-1">Lihat riwayat perbedaan antara catatan stok dan jumlah barang asli.</p>
         </div>
         <a href="{{ route('stock-adjustments.create') }}" class="inline-flex items-center justify-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-lg shadow-blue-200 transition-all transform active:scale-95 uppercase text-xs tracking-widest">
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-            Lakukan Opname
+            Cek Stok Baru
         </a>
     </div>
-
-    <form action="{{ route('stock-adjustments.index') }}" method="GET" class="mb-8">
-        <div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 p-6">
-            <div class="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-4 items-end">
-                <div>
-                    <label for="group" class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">Filter Grup Kategori</label>
-                    <select name="group" id="group" class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition font-semibold text-slate-700 appearance-none">
-                        <option value="">Semua Grup</option>
-                        @foreach($categoryGroups as $groupName)
-                            <option value="{{ $groupName }}" @selected($selectedGroup === $groupName)>{{ $groupName }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <button type="submit" class="px-6 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-extrabold uppercase tracking-widest text-xs transition-all">
-                    Filter
-                </button>
-                <a href="{{ route('stock-adjustments.index') }}" class="px-6 py-4 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-2xl font-extrabold uppercase tracking-widest text-xs transition-all text-center">
-                    Reset
-                </a>
-            </div>
-        </div>
-    </form>
 
     <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
         <div class="overflow-x-auto">
@@ -42,13 +20,13 @@
                 <thead>
                     <tr class="bg-slate-50/50 border-b border-slate-100">
                         <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Tanggal</th>
-                        <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Grup</th>
-                        <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Jenis Seafood</th>
-                        <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Stok Sistem</th>
-                        <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Stok Fisik</th>
+                        <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Kelompok</th>
+                        <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Nama Barang</th>
+                        <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Stok Tercatat</th>
+                        <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Stok Hasil Hitung</th>
                         <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Selisih</th>
-                        <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Alasan</th>
-                        <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Oleh</th>
+                        <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Catatan</th>
+                        <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Dicek Oleh</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-50">
@@ -59,7 +37,7 @@
                         </td>
                         <td class="px-8 py-6">
                             <span class="inline-flex items-center px-3 py-2 bg-slate-100 text-slate-500 rounded-xl text-xs font-bold uppercase tracking-widest">
-                                {{ $adj->category->group_name }}
+                                {{ $adj->category->display_group_name }}
                             </span>
                         </td>
                         <td class="px-8 py-6">
@@ -90,7 +68,7 @@
                                 <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 mb-4">
                                     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H4a2 2 0 00-2 2v7m18 0v5a2 2 0 01-2 2H4a2 2 0 01-2-2v-5m18 0l-2-2m-2-2l-2-2m-2-2l-2-2m-2-2L4 13"></path></svg>
                                 </div>
-                                <p class="text-slate-400 font-medium italic">Belum ada riwayat stock opname.</p>
+                                <p class="text-slate-400 font-medium italic">Belum ada riwayat cek stok.</p>
                             </div>
                         </td>
                     </tr>

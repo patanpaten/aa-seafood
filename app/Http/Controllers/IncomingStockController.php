@@ -12,31 +12,21 @@ class IncomingStockController extends Controller
     /**
      * Show the form for creating a new incoming stock.
      */
-    public function create(Request $request)
+    public function create()
     {
         $suppliers = Supplier::orderBy('name')->get();
-        $selectedGroup = $request->query('group');
-        $categoryGroups = Category::query()
-            ->select('group_name')
-            ->whereNotNull('group_name')
-            ->distinct()
-            ->orderBy('group_name')
-            ->pluck('group_name');
 
         $categories = Category::query()
-            ->when($selectedGroup, fn ($query) => $query->where('group_name', $selectedGroup))
             ->orderBy('group_name')
             ->orderBy('name')
             ->get();
 
-        $groupedCategories = $categories->groupBy(fn ($category) => $category->group_name ?: 'Lainnya');
+        $groupedCategories = $categories->groupBy(fn ($category) => $category->display_group_name ?: 'Lainnya');
 
         return view('incoming_stocks.create', compact(
             'suppliers',
             'categories',
-            'groupedCategories',
-            'categoryGroups',
-            'selectedGroup'
+            'groupedCategories'
         ));
     }
 
@@ -53,10 +43,10 @@ class IncomingStockController extends Controller
             'actual_weight' => 'required|numeric|min:0.01',
         ]);
 
-        // Hitung penyusutan (Drip Loss)
+        // Hitung selisih berat
         $shrinkage = $validated['receipt_weight'] - $validated['actual_weight'];
         
-        // Cek jika penyusutan > 5% dari berat nota
+        // Cek jika selisih berat > 5% dari berat di nota
         $threshold = $validated['receipt_weight'] * 0.05;
         $status = ($shrinkage > $threshold) ? 'Warning/Loss' : 'Normal';
 
@@ -72,10 +62,10 @@ class IncomingStockController extends Controller
 
         if ($status === 'Warning/Loss') {
             return redirect()->route('incoming-stocks.create')
-                ->with('success', 'Stok masuk berhasil dicatat.')
-                ->with('warning', "Penyusutan seafood ini mencapai " . number_format($shrinkage, 2) . " kg (" . number_format(($shrinkage / $validated['receipt_weight']) * 100, 1) . "%). Nilai ini melebihi batas toleransi 5%!");
+                ->with('success', 'Barang masuk berhasil dicatat.')
+                ->with('warning', "Selisih berat barang ini mencapai " . number_format($shrinkage, 2) . " kg (" . number_format(($shrinkage / $validated['receipt_weight']) * 100, 1) . "%). Nilai ini melebihi batas aman 5%!");
         }
 
-        return redirect()->route('incoming-stocks.create')->with('success', "Stok masuk berhasil dicatat.");
+        return redirect()->route('incoming-stocks.create')->with('success', "Barang masuk berhasil dicatat.");
     }
 }

@@ -28,7 +28,7 @@ class SupplierController extends Controller
 
         Supplier::create($validated);
 
-        return redirect()->route('suppliers.index')->with('success', 'Supplier berhasil ditambahkan.');
+        return redirect()->route('suppliers.index')->with('success', 'Data tempat beli berhasil ditambahkan.');
     }
 
     public function edit(Supplier $supplier)
@@ -46,12 +46,12 @@ class SupplierController extends Controller
 
         $supplier->update($validated);
 
-        return redirect()->route('suppliers.index')->with('success', 'Supplier berhasil diperbarui.');
+        return redirect()->route('suppliers.index')->with('success', 'Data tempat beli berhasil diperbarui.');
     }
 
     public function destroy(Supplier $supplier)
     {
         $supplier->delete();
-        return redirect()->route('suppliers.index')->with('success', 'Supplier berhasil dihapus.');
+        return redirect()->route('suppliers.index')->with('success', 'Data tempat beli berhasil dihapus.');
     }
 }

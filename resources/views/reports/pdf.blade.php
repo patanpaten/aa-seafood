@@ -25,23 +25,24 @@
 </head>
 <body>
     <div class="header">
-        <h1 class="title">Laporan Inventaris & Penjualan</h1>
+        <h1 class="title">Laporan Barang & Penjualan</h1>
         <p class="subtitle">Periode: {{ $startDate }} s/d {{ $endDate }}</p>
+        <p class="subtitle">Kelompok Barang: {{ $selectedGroup ?: 'Semua Kelompok' }}</p>
     </div>
 
     <div class="summary-box">
         <table class="summary-table">
             <tr>
                 <td>
-                    <span class="label">Total Masuk</span>
+                    <span class="label">Barang Masuk</span>
                     <span class="value">{{ number_format($reportData['total_incoming'], 2) }} kg</span>
                 </td>
                 <td>
-                    <span class="label">Total Susut</span>
+                    <span class="label">Selisih Berat</span>
                     <span class="value">{{ number_format($reportData['total_shrinkage'], 2) }} kg</span>
                 </td>
                 <td>
-                    <span class="label">Total Jual</span>
+                    <span class="label">Barang Terjual</span>
                     <span class="value">{{ number_format($reportData['total_sales_kg'], 2) }} kg</span>
                 </td>
                 <td>
@@ -52,19 +53,21 @@
         </table>
     </div>
 
-    <h3>Detail Stok Per Jenis Seafood</h3>
+    <h3>Rincian Stok Per Barang</h3>
     <table class="detail-table">
         <thead>
             <tr>
-                <th>Jenis Seafood</th>
-                <th>Masuk (Periode)</th>
-                <th>Keluar (Periode)</th>
-                <th>Stok Saat Ini</th>
+                <th>Kelompok</th>
+                <th>Nama Barang</th>
+                <th>Barang Masuk</th>
+                <th>Barang Terjual</th>
+                <th>Sisa Stok</th>
             </tr>
         </thead>
         <tbody>
             @foreach($reportData['breakdown'] as $item)
             <tr>
+                <td>{{ $item['group'] }}</td>
                 <td>{{ $item['type'] }}</td>
                 <td>{{ number_format($item['incoming'], 2) }} kg</td>
                 <td>{{ number_format($item['sales'], 2) }} kg</td>
@@ -75,6 +78,7 @@
         <tfoot>
             <tr class="total-row">
                 <td>TOTAL GLOBAL</td>
+                <td>{{ $selectedGroup ?: 'Semua Grup' }}</td>
                 <td>{{ number_format($reportData['total_incoming'], 2) }} kg</td>
                 <td>{{ number_format($reportData['total_sales_kg'], 2) }} kg</td>
                 <td>{{ number_format($reportData['current_stock'], 2) }} kg</td>

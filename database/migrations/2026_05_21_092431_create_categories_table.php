@@ -14,6 +14,10 @@ return new class extends Migration
         Schema::create('categories', function (Blueprint $table) {
             $table->id();
             $table->string('name')->unique();
+            $table->string('group_name')->nullable();
+            $table->decimal('retail_price', 15, 2)->default(0);
+            $table->decimal('wholesale_price', 15, 2)->default(0);
+            $table->string('image_path')->nullable();
             $table->timestamps();
         });
     }

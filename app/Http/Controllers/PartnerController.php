@@ -28,7 +28,7 @@ class PartnerController extends Controller
 
         Partner::create($validated);
 
-        return redirect()->route('partners.index')->with('success', 'Partner berhasil ditambahkan.');
+        return redirect()->route('partners.index')->with('success', 'Data pelanggan berhasil ditambahkan.');
     }
 
     public function edit(Partner $partner)
@@ -46,12 +46,12 @@ class PartnerController extends Controller
 
         $partner->update($validated);
 
-        return redirect()->route('partners.index')->with('success', 'Partner berhasil diperbarui.');
+        return redirect()->route('partners.index')->with('success', 'Data pelanggan berhasil diperbarui.');
     }
 
     public function destroy(Partner $partner)
     {
         $partner->delete();
-        return redirect()->route('partners.index')->with('success', 'Partner berhasil dihapus.');
+        return redirect()->route('partners.index')->with('success', 'Data pelanggan berhasil dihapus.');
     }
 }

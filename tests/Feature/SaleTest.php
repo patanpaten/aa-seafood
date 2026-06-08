@@ -2,7 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Models\Category;
 use App\Models\IncomingStock;
+use App\Models\Partner;
+use App\Models\Supplier;
 use App\Models\Sale;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -17,15 +20,22 @@ class SaleTest extends TestCase
      */
     public function test_it_creates_sale_when_stock_is_sufficient(): void
     {
-        // 0. Setup: Create and login user
         $user = User::factory()->create(['role' => 'admin_gudang']);
         $this->actingAs($user);
 
-        // 1. Setup: Create incoming stock
+        $supplier = Supplier::create(['name' => 'Supplier A']);
+        $partner = Partner::create(['name' => 'Resto A']);
+        $category = Category::create([
+            'name' => 'Udang Vaname',
+            'group_name' => 'Udang',
+            'retail_price' => 50000,
+            'wholesale_price' => 45000,
+        ]);
+
         IncomingStock::create([
             'date' => '2026-05-11',
-            'supplier_name' => 'Supplier A',
-            'seafood_type' => 'Udang',
+            'supplier_id' => $supplier->id,
+            'category_id' => $category->id,
             'receipt_weight' => 100,
             'actual_weight' => 100,
             'shrinkage_weight' => 0,
@@ -34,19 +44,21 @@ class SaleTest extends TestCase
 
         $data = [
             'date' => '2026-05-11',
-            'partner_restaurant_name' => 'Resto A',
-            'seafood_type' => 'Udang',
+            'partner_id' => $partner->id,
+            'category_id' => $category->id,
+            'price_type' => 'eceran',
             'quantity_sold_kg' => 40,
-            'price_per_kg' => 50000,
         ];
 
         $response = $this->post(route('sales.store'), $data);
 
         $response->assertRedirect();
         $this->assertDatabaseHas('sales', [
-            'partner_restaurant_name' => 'Resto A',
-            'seafood_type' => 'Udang',
+            'partner_id' => $partner->id,
+            'category_id' => $category->id,
+            'price_type' => 'eceran',
             'quantity_sold_kg' => 40,
+            'price_per_kg' => 50000,
             'total_price' => 2000000,
         ]);
     }
@@ -56,15 +68,22 @@ class SaleTest extends TestCase
      */
     public function test_it_fails_to_create_sale_when_stock_is_insufficient(): void
     {
-        // 0. Setup: Create and login user
         $user = User::factory()->create(['role' => 'admin_gudang']);
         $this->actingAs($user);
 
-        // 1. Setup: Create incoming stock
+        $supplier = Supplier::create(['name' => 'Supplier A']);
+        $partner = Partner::create(['name' => 'Resto B']);
+        $category = Category::create([
+            'name' => 'Udang Windu',
+            'group_name' => 'Udang',
+            'retail_price' => 50000,
+            'wholesale_price' => 45000,
+        ]);
+
         IncomingStock::create([
             'date' => '2026-05-11',
-            'supplier_name' => 'Supplier A',
-            'seafood_type' => 'Udang',
+            'supplier_id' => $supplier->id,
+            'category_id' => $category->id,
             'receipt_weight' => 100,
             'actual_weight' => 50, // Only 50kg available
             'shrinkage_weight' => 50,
@@ -73,10 +92,10 @@ class SaleTest extends TestCase
 
         $data = [
             'date' => '2026-05-11',
-            'partner_restaurant_name' => 'Resto B',
-            'seafood_type' => 'Udang',
+            'partner_id' => $partner->id,
+            'category_id' => $category->id,
+            'price_type' => 'grosir',
             'quantity_sold_kg' => 60, // Requesting more than available
-            'price_per_kg' => 50000,
         ];
 
         $response = $this->post(route('sales.store'), $data);

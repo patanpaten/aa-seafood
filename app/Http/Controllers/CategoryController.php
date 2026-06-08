@@ -20,11 +20,12 @@ class CategoryController extends Controller
     public function create()
     {
         $categoryGroups = Category::query()
-            ->select('group_name')
             ->whereNotNull('group_name')
-            ->distinct()
-            ->orderBy('group_name')
-            ->pluck('group_name');
+            ->get()
+            ->pluck('display_group_name')
+            ->unique()
+            ->sort()
+            ->values();
 
         return view('categories.create', compact('categoryGroups'));
     }
@@ -39,23 +40,23 @@ class CategoryController extends Controller
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
-        $validated['price'] = $validated['retail_price'];
         $validated['image_path'] = $this->storeImage($request);
         unset($validated['image']);
 
         Category::create($validated);
 
-        return redirect()->route('categories.index')->with('success', 'Kategori berhasil ditambahkan.');
+        return redirect()->route('categories.index')->with('success', 'Data barang berhasil ditambahkan.');
     }
 
     public function edit(Category $category)
     {
         $categoryGroups = Category::query()
-            ->select('group_name')
             ->whereNotNull('group_name')
-            ->distinct()
-            ->orderBy('group_name')
-            ->pluck('group_name');
+            ->get()
+            ->pluck('display_group_name')
+            ->unique()
+            ->sort()
+            ->values();
 
         return view('categories.edit', compact('category', 'categoryGroups'));
     }
@@ -70,7 +71,6 @@ class CategoryController extends Controller
             'image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
-        $validated['price'] = $validated['retail_price'];
         if ($request->hasFile('image') && $category->image_path) {
             Storage::disk('public')->delete($category->image_path);
         }
@@ -82,7 +82,7 @@ class CategoryController extends Controller
 
         $category->update($validated);
 
-        return redirect()->route('categories.index')->with('success', 'Kategori berhasil diperbarui.');
+        return redirect()->route('categories.index')->with('success', 'Data barang berhasil diperbarui.');
     }
 
     public function destroy(Category $category)
@@ -93,7 +93,7 @@ class CategoryController extends Controller
 
         $category->delete();
 
-        return redirect()->route('categories.index')->with('success', 'Kategori berhasil dihapus.');
+        return redirect()->route('categories.index')->with('success', 'Data barang berhasil dihapus.');
     }
 
     private function storeImage(Request $request): ?string

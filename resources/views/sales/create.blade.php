@@ -12,7 +12,7 @@
                     </div>
                     <div>
                         <h1 class="text-2xl font-extrabold text-slate-900 uppercase tracking-tight">Catat Penjualan</h1>
-                        <p class="text-slate-500 text-sm font-medium">Input pengiriman seafood ke restoran partner.</p>
+                        <p class="text-slate-500 text-sm font-medium">Catat barang yang dijual ke pelanggan.</p>
                     </div>
                 </div>
 
@@ -26,28 +26,6 @@
                     </div>
                 @endif
 
-                <form action="{{ route('sales.create') }}" method="GET" class="mb-8">
-                    <div class="p-6 bg-slate-50 rounded-[2rem] border border-slate-100">
-                        <div class="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-4 items-end">
-                            <div>
-                                <label for="group" class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">Filter Grup Kategori</label>
-                                <select name="group" id="group" class="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition font-semibold text-slate-700 appearance-none">
-                                    <option value="">Semua Grup</option>
-                                    @foreach($categoryGroups as $groupName)
-                                        <option value="{{ $groupName }}" @selected($selectedGroup === $groupName)>{{ $groupName }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <button type="submit" class="px-6 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-extrabold uppercase tracking-widest text-xs transition-all">
-                                Terapkan
-                            </button>
-                            <a href="{{ route('sales.create') }}" class="px-6 py-4 bg-white hover:bg-slate-100 text-slate-500 rounded-2xl font-extrabold uppercase tracking-widest text-xs transition-all text-center border border-slate-200">
-                                Reset
-                            </a>
-                        </div>
-                    </div>
-                </form>
-
                 <form action="{{ route('sales.store') }}" method="POST" class="space-y-8">
                     @csrf
                     
@@ -59,7 +37,7 @@
                         </div>
 
                         <div>
-                            <label for="partner_id" class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">Restoran Partner</label>
+                            <label for="partner_id" class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">Nama Pembeli / Restoran</label>
                             <select name="partner_id" id="partner_id" 
                                 class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition font-semibold text-slate-700 appearance-none" required>
                                 <option value="">-- Pilih Partner --</option>
@@ -72,7 +50,7 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
                         <div>
-                            <label for="category_id" class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">Jenis Seafood</label>
+                            <label for="category_id" class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">Nama Barang</label>
                             <select name="category_id" id="category_id" 
                                 class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition font-semibold text-slate-700 appearance-none" required>
                                 <option value="">-- Pilih --</option>
@@ -80,8 +58,8 @@
                                     <optgroup label="{{ $groupName }}">
                                         @foreach($groupCategories as $category)
                                             <option value="{{ $category->id }}"
-                                                data-retail-price="{{ $category->retail_price ?? $category->price }}"
-                                                data-wholesale-price="{{ $category->wholesale_price ?? $category->price }}"
+                                                data-retail-price="{{ $category->retail_price }}"
+                                                data-wholesale-price="{{ $category->wholesale_price }}"
                                                 @selected(old('category_id') == $category->id)>
                                                 {{ $category->name }}
                                             </option>
@@ -91,14 +69,15 @@
                                     <option value="" disabled>Tidak ada item untuk grup ini</option>
                                 @endforelse
                             </select>
+                            <p class="text-xs text-slate-400 mt-2 ml-1">Pilihan barang sudah dikelompokkan supaya lebih mudah dicari.</p>
                         </div>
 
                         <div>
-                            <label for="price_type" class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">Tipe Harga</label>
+                            <label for="price_type" class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">Pilihan Harga</label>
                             <select name="price_type" id="price_type"
                                 class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition font-semibold text-slate-700 appearance-none" required>
-                                <option value="eceran" @selected(old('price_type', 'eceran') === 'eceran')>Eceran</option>
-                                <option value="grosir" @selected(old('price_type') === 'grosir')>Grosir</option>
+                                <option value="eceran" @selected(old('price_type', 'eceran') === 'eceran')>Harga Biasa</option>
+                                <option value="grosir" @selected(old('price_type') === 'grosir')>Harga Banyak</option>
                             </select>
                         </div>
 
@@ -109,12 +88,24 @@
                         </div>
                     </div>
 
-                    <div class="p-6 bg-emerald-50/50 rounded-[2rem] border border-emerald-100">
-                        <label for="price_per_kg" class="block text-xs font-bold text-emerald-400 uppercase tracking-widest mb-3 ml-1">Harga Jual per Kg</label>
-                        <div class="relative">
-                            <span class="absolute left-5 top-1/2 -translate-y-1/2 font-black text-emerald-600 text-xl">Rp</span>
-                            <input type="number" name="price_per_kg" id="price_per_kg" value="{{ old('price_per_kg') }}" placeholder="0"
-                                class="w-full pl-16 pr-5 py-5 bg-white border border-emerald-100 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition font-black text-3xl text-emerald-600" required>
+                    <div id="price-type-card" class="hidden p-6 bg-slate-50 rounded-[2rem] border border-slate-100">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                            <div>
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] mb-2">Ringkasan Harga</p>
+                                <div class="flex items-center gap-3 flex-wrap">
+                                    <span id="price-type-badge" class="inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-[0.2em]"></span>
+                                    <span id="price-source-label" class="text-sm font-semibold text-slate-500"></span>
+                                </div>
+                            </div>
+                            <div class="text-left sm:text-right">
+                                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Harga Yang Dipakai</p>
+                                <p id="price-highlight" class="text-2xl font-black text-slate-900">Rp 0</p>
+                            </div>
+                        </div>
+
+                        <div class="mt-5 p-4 rounded-2xl bg-white border border-slate-200">
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Catatan</p>
+                            <p class="text-sm font-medium text-slate-500">Harga per kg sekarang otomatis mengikuti data barang. Jadi tidak perlu diisi lagi.</p>
                         </div>
                     </div>
 
@@ -134,7 +125,10 @@
     document.addEventListener('DOMContentLoaded', function() {
         const categorySelect = document.getElementById('category_id');
         const priceTypeSelect = document.getElementById('price_type');
-        const priceInput = document.getElementById('price_per_kg');
+        const priceTypeCard = document.getElementById('price-type-card');
+        const priceTypeBadge = document.getElementById('price-type-badge');
+        const priceSourceLabel = document.getElementById('price-source-label');
+        const priceHighlight = document.getElementById('price-highlight');
 
         function syncDefaultPrice() {
             const selectedOption = categorySelect.options[categorySelect.selectedIndex];
@@ -144,10 +138,20 @@
                 : selectedOption?.dataset?.retailPrice;
 
             if (! defaultPrice) {
+                priceTypeCard.classList.add('hidden');
                 return;
             }
 
-            priceInput.value = parseFloat(defaultPrice).toFixed(2);
+            const formatter = new Intl.NumberFormat('id-ID');
+            const badgeClass = priceType === 'grosir'
+                ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                : 'bg-blue-50 text-blue-600 border border-blue-100';
+
+            priceTypeCard.classList.remove('hidden');
+            priceTypeBadge.className = 'inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-[0.2em] ' + badgeClass;
+            priceTypeBadge.textContent = priceType === 'grosir' ? 'Harga Banyak' : 'Harga Biasa';
+            priceSourceLabel.textContent = selectedOption.text ? 'Mengikuti barang ' + selectedOption.text : '';
+            priceHighlight.textContent = 'Rp ' + formatter.format(parseFloat(defaultPrice || 0));
         }
 
         categorySelect.addEventListener('change', syncDefaultPrice);

@@ -1,13 +1,13 @@
 @extends('layouts.app')
 
-@section('title', 'Executive Dashboard')
+@section('title', 'Ringkasan Usaha')
 
 @section('content')
     <header class="mb-10">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-                <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight uppercase">Executive Dashboard</h1>
-                <p class="text-slate-500 font-medium text-sm mt-1">Ringkasan performa bisnis Anda bulan ini.</p>
+                <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight uppercase">Ringkasan Usaha</h1>
+                <p class="text-slate-500 font-medium text-sm mt-1">Lihat ringkasan usaha dan stok bulan ini.</p>
             </div>
             <div class="inline-flex items-center px-4 py-2 bg-white border border-slate-200 rounded-2xl shadow-sm">
                 <div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse mr-3"></div>
@@ -38,7 +38,7 @@
             <div class="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-600 mb-4">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path></svg>
             </div>
-            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Penyusutan</p>
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Selisih Berat</p>
             <h3 class="text-2xl font-extrabold text-slate-900">{{ number_format($thisMonthShrinkage, 1) }} <span class="text-sm font-bold text-slate-400">kg</span></h3>
         </div>
 
@@ -54,14 +54,14 @@
     <!-- Charts Section -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
         <div class="lg:col-span-2 bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
-            <h3 class="text-lg font-extrabold text-slate-900 uppercase tracking-tight mb-8">Trend Penyusutan (6 Bln)</h3>
+            <h3 class="text-lg font-extrabold text-slate-900 uppercase tracking-tight mb-8">Grafik Selisih Berat (6 Bulan)</h3>
             <div class="h-72">
                 <canvas id="shrinkageTrendChart"></canvas>
             </div>
         </div>
 
         <div class="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
-            <h3 class="text-lg font-extrabold text-slate-900 uppercase tracking-tight mb-8">Produk Terlaris</h3>
+            <h3 class="text-lg font-extrabold text-slate-900 uppercase tracking-tight mb-8">Barang Paling Laku</h3>
             <div class="h-72 flex items-center justify-center">
                 <canvas id="bestSellingChart"></canvas>
             </div>
@@ -75,7 +75,7 @@
         <div class="relative z-10">
             <div class="flex items-center space-x-4 mb-10">
                 <div class="w-1 h-8 bg-blue-500 rounded-full"></div>
-                <h2 class="text-2xl font-extrabold text-white uppercase tracking-tight">Management Hub</h2>
+                <h2 class="text-2xl font-extrabold text-white uppercase tracking-tight">Pengaturan Data</h2>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -83,32 +83,32 @@
                     <div class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white mb-4 group-hover:scale-110 transition-transform">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
                     </div>
-                    <h4 class="font-bold text-white text-sm uppercase">Supplier</h4>
-                    <p class="text-xs text-slate-400 mt-1">Daftar pemasok utama.</p>
+                    <h4 class="font-bold text-white text-sm uppercase">Tempat Beli</h4>
+                    <p class="text-xs text-slate-400 mt-1">Daftar tempat membeli barang.</p>
                 </a>
 
                 <a href="{{ route('partners.index') }}" class="group bg-white/5 hover:bg-white/10 p-6 rounded-3xl border border-white/10 transition-all">
                     <div class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white mb-4 group-hover:scale-110 transition-transform">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                     </div>
-                    <h4 class="font-bold text-white text-sm uppercase">Partner</h4>
-                    <p class="text-xs text-slate-400 mt-1">Daftar restoran partner.</p>
+                    <h4 class="font-bold text-white text-sm uppercase">Pelanggan</h4>
+                    <p class="text-xs text-slate-400 mt-1">Daftar pelanggan restoran.</p>
                 </a>
 
                 <a href="{{ route('categories.index') }}" class="group bg-white/5 hover:bg-white/10 p-6 rounded-3xl border border-white/10 transition-all">
                     <div class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white mb-4 group-hover:scale-110 transition-transform">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
                     </div>
-                    <h4 class="font-bold text-white text-sm uppercase">Kategori</h4>
-                    <p class="text-xs text-slate-400 mt-1">Jenis kategori produk.</p>
+                    <h4 class="font-bold text-white text-sm uppercase">Daftar Barang</h4>
+                    <p class="text-xs text-slate-400 mt-1">Daftar nama barang yang dijual.</p>
                 </a>
 
                 <a href="{{ route('stock-adjustments.index') }}" class="group bg-blue-600 p-6 rounded-3xl transition-all hover:bg-blue-700 shadow-lg shadow-blue-900/20">
                     <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-white mb-4">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
                     </div>
-                    <h4 class="font-bold text-white text-sm uppercase">Stock Opname</h4>
-                    <p class="text-xs text-blue-100 mt-1">Sesuaikan stok fisik gudang.</p>
+                    <h4 class="font-bold text-white text-sm uppercase">Cek Stok</h4>
+                    <p class="text-xs text-blue-100 mt-1">Cocokkan catatan stok dengan barang di gudang.</p>
                 </a>
             </div>
         </div>
