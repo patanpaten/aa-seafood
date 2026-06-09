@@ -12,7 +12,7 @@
                     </div>
                     <div>
                         <h1 class="text-2xl font-extrabold text-slate-900 uppercase tracking-tight">Cek Stok Barang</h1>
-                        <p class="text-slate-500 text-sm font-medium">Cocokkan catatan stok dengan jumlah barang yang benar-benar ada.</p>
+                        <p class="text-slate-500 text-sm font-medium">Sesuaikan stok untuk barang yang dipilih dari tabel stok gudang.</p>
                     </div>
                 </div>
 
@@ -41,7 +41,7 @@
                                             <option value="{{ $category->id }}"
                                                 data-stock="{{ $category->current_stock }}"
                                                 data-group="{{ $groupName }}"
-                                                @selected(old('category_id') == $category->id)>
+                                                @selected(old('category_id', $selectedCategoryId) == $category->id)>
                                                 {{ $category->name }}
                                             </option>
                                         @endforeach

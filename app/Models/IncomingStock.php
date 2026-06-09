@@ -10,6 +10,8 @@ class IncomingStock extends Model
         'date',
         'supplier_id',
         'category_id',
+        'purchase_price_per_kg',
+        'total_purchase_price',
         'receipt_weight',
         'actual_weight',
         'shrinkage_weight',
@@ -28,6 +30,8 @@ class IncomingStock extends Model
 
     protected $casts = [
         'date' => 'date',
+        'purchase_price_per_kg' => 'decimal:2',
+        'total_purchase_price' => 'decimal:2',
         'receipt_weight' => 'decimal:2',
         'actual_weight' => 'decimal:2',
         'shrinkage_weight' => 'decimal:2',

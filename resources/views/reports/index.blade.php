@@ -54,7 +54,7 @@
     @endif
 
     <!-- Summary Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 mb-10">
         <div class="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden group hover:border-blue-200 transition-colors">
             <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
                 <svg class="w-16 h-16 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
@@ -79,6 +79,14 @@
             <p class="text-3xl font-black text-slate-900">{{ number_format($reportData['total_sales_kg'], 2) }} <span class="text-sm font-bold text-slate-400">kg</span></p>
         </div>
 
+        <div class="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden group hover:border-amber-200 transition-colors">
+            <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+                <svg class="w-16 h-16 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2h6c0-1.105-1.343-2-3-2zm0 0V6m0 12v-2m-6-2h12M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+            </div>
+            <p class="text-[10px] font-bold text-amber-400 uppercase tracking-[0.2em] mb-3">Modal Belanja</p>
+            <p class="text-3xl font-black text-slate-900"><span class="text-sm font-bold text-slate-400">Rp</span> {{ number_format($reportData['total_purchase_cost'], 0, ',', '.') }}</p>
+        </div>
+
         <div class="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden group hover:border-indigo-200 transition-colors">
             <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
                 <svg class="w-16 h-16 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -86,59 +94,71 @@
             <p class="text-[10px] font-bold text-indigo-400 uppercase tracking-[0.2em] mb-3">Pendapatan</p>
             <p class="text-3xl font-black text-slate-900"><span class="text-sm font-bold text-slate-400">Rp</span> {{ number_format($reportData['total_revenue'], 0, ',', '.') }}</p>
         </div>
+
+        <div class="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden group hover:border-emerald-200 transition-colors">
+            <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+                <svg class="w-16 h-16 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path></svg>
+            </div>
+            <p class="text-[10px] font-bold text-emerald-400 uppercase tracking-[0.2em] mb-3">Laba Kotor</p>
+            <p class="text-3xl font-black {{ $reportData['gross_profit'] >= 0 ? 'text-emerald-600' : 'text-rose-600' }}">
+                <span class="text-sm font-bold text-slate-400">Rp</span> {{ number_format($reportData['gross_profit'], 0, ',', '.') }}
+            </p>
+        </div>
     </div>
 
-    <!-- Detailed Table -->
-    <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
+    <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden mt-10">
         <div class="px-8 py-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-            <h3 class="text-sm font-extrabold text-slate-900 uppercase tracking-widest">Rincian Per Barang</h3>
-            <span class="px-3 py-1 bg-white rounded-full text-[10px] font-bold text-slate-400 border border-slate-200 uppercase tracking-widest">Data Periode</span>
+            <h3 class="text-sm font-extrabold text-slate-900 uppercase tracking-widest">Detail Aktivitas</h3>
+            <span class="px-3 py-1 bg-white rounded-full text-[10px] font-bold text-slate-400 border border-slate-200 uppercase tracking-widest">Barang Masuk & Penjualan</span>
         </div>
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
                 <thead>
                     <tr class="bg-slate-50/20 border-b border-slate-100">
-                        <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Kelompok</th>
-                        <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Nama Barang</th>
-                        <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Barang Masuk</th>
-                        <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Barang Terjual</th>
-                        <th class="px-8 py-5 text-[10px] font-bold text-blue-400 uppercase tracking-[0.2em]">Sisa Stok</th>
+                        <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Tanggal</th>
+                        <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Jenis</th>
+                        <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Group</th>
+                        <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Tempat / Pembeli</th>
+                        <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Barang</th>
+                        <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Qty</th>
+                        <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Harga Beli</th>
+                        <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Harga Jual</th>
+                        <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Total Transaksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-50">
-                    @forelse($reportData['breakdown'] as $item)
-                    <tr class="hover:bg-slate-50/50 transition-colors group">
-                        <td class="px-8 py-6">
-                            <span class="inline-flex items-center px-3 py-2 bg-slate-100 text-slate-500 rounded-xl text-xs font-bold uppercase tracking-widest">{{ $item['group'] }}</span>
-                        </td>
-                        <td class="px-8 py-6 font-bold text-slate-700">{{ $item['type'] }}</td>
-                        <td class="px-8 py-6 text-sm font-medium text-slate-500">{{ number_format($item['incoming'], 2) }} kg</td>
-                        <td class="px-8 py-6 text-sm font-medium text-slate-500">{{ number_format($item['sales'], 2) }} kg</td>
-                        <td class="px-8 py-6">
-                            <span class="inline-flex items-center px-4 py-2 bg-blue-50 text-blue-600 rounded-xl font-black text-sm">
-                                {{ number_format($item['current_stock'], 2) }} kg
-                            </span>
-                        </td>
-                    </tr>
+                    @forelse($reportData['activity_details'] as $item)
+                        <tr class="hover:bg-slate-50/50 transition-colors">
+                            <td class="px-6 py-5 text-sm font-medium text-slate-500">{{ $item['date'] }}</td>
+                            <td class="px-6 py-5">
+                                <span class="inline-flex items-center px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-widest {{ $item['type'] === 'Penjualan' ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600' }}">
+                                    {{ $item['type'] }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-5">
+                                <span class="inline-flex items-center px-3 py-2 bg-slate-100 text-slate-500 rounded-xl text-xs font-bold uppercase tracking-widest">
+                                    {{ $item['group_name'] }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-5 font-bold text-slate-700">{{ $item['party_name'] }}</td>
+                            <td class="px-6 py-5 text-sm font-medium text-slate-500">{{ $item['category_name'] }}</td>
+                            <td class="px-6 py-5 text-sm font-medium text-slate-500">{{ number_format($item['quantity'], 2) }} kg</td>
+                            <td class="px-6 py-5 text-sm font-bold text-amber-600">
+                                {{ $item['purchase_price_per_kg'] !== null ? 'Rp ' . number_format($item['purchase_price_per_kg'], 0, ',', '.') : '-' }}
+                            </td>
+                            <td class="px-6 py-5 text-sm font-bold text-emerald-600">
+                                {{ $item['sale_price_per_kg'] !== null ? 'Rp ' . number_format($item['sale_price_per_kg'], 0, ',', '.') : '-' }}
+                            </td>
+                            <td class="px-6 py-5 text-sm font-black text-slate-900">
+                                {{ $item['total_price'] !== null ? 'Rp ' . number_format($item['total_price'], 0, ',', '.') : '-' }}
+                            </td>
+                        </tr>
                     @empty
-                    <tr>
-                        <td colspan="5" class="px-8 py-12 text-center text-slate-400 font-medium italic">Tidak ada data untuk periode ini.</td>
-                    </tr>
+                        <tr>
+                            <td colspan="9" class="px-6 py-10 text-center text-slate-400 font-medium italic">Belum ada aktivitas pada periode ini.</td>
+                        </tr>
                     @endforelse
                 </tbody>
-                <tfoot class="bg-slate-900">
-                    <tr class="font-bold">
-                        <td class="px-8 py-6 text-slate-400 uppercase text-[10px] tracking-[0.2em]">TOTAL GLOBAL</td>
-                        <td class="px-8 py-6 text-white text-lg">{{ $selectedGroup ?: 'Semua Grup' }}</td>
-                        <td class="px-8 py-6 text-white text-lg">{{ number_format($reportData['total_incoming'], 2) }} kg</td>
-                        <td class="px-8 py-6 text-white text-lg">{{ number_format($reportData['total_sales_kg'], 2) }} kg</td>
-                        <td class="px-8 py-6">
-                            <span class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-xl font-black text-lg shadow-lg shadow-blue-900/50">
-                                {{ number_format($reportData['current_stock'], 2) }} kg
-                            </span>
-                        </td>
-                    </tr>
-                </tfoot>
             </table>
         </div>
     </div>

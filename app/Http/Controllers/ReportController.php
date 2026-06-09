@@ -66,28 +66,114 @@ class ReportController extends Controller
             ->when($selectedGroup, fn ($query) => $query->whereRaw('LOWER(TRIM(group_name)) = ?', [$selectedGroup]))
             ->pluck('id');
 
+        $incomingQuery = IncomingStock::query()
+            ->with(['supplier', 'category'])
+            ->whereBetween('date', [$startDate, $endDate])
+            ->when($selectedGroup, fn ($query) => $query->whereIn('category_id', $categoryIds));
+
+        $salesQuery = Sale::query()
+            ->with(['partner', 'category'])
+            ->whereBetween('date', [$startDate, $endDate])
+            ->when($selectedGroup, fn ($query) => $query->whereIn('category_id', $categoryIds));
+
         // 1. Total Incoming Seafood (kg)
-        $totalIncoming = IncomingStock::whereBetween('date', [$startDate, $endDate])
-            ->when($selectedGroup, fn ($query) => $query->whereIn('category_id', $categoryIds))
+        $totalIncoming = (clone $incomingQuery)
             ->sum('actual_weight');
 
         // 2. Total Shrinkage / Drip Loss (kg)
-        $totalShrinkage = IncomingStock::whereBetween('date', [$startDate, $endDate])
-            ->when($selectedGroup, fn ($query) => $query->whereIn('category_id', $categoryIds))
+        $totalShrinkage = (clone $incomingQuery)
             ->sum('shrinkage_weight');
 
-        // 3. Total Sales (kg & Revenue)
-        $salesQuery = Sale::whereBetween('date', [$startDate, $endDate])
-            ->when($selectedGroup, fn ($query) => $query->whereIn('category_id', $categoryIds));
-        $totalSalesKg = $salesQuery->sum('quantity_sold_kg');
-        $totalRevenue = $salesQuery->sum('total_price');
+        // 3. Total Purchase Cost
+        $totalPurchaseCost = (clone $incomingQuery)->sum('total_purchase_price');
 
-        // 4. Current Available Stock
+        // 4. Total Sales (kg & Revenue)
+        $totalSalesKg = (clone $salesQuery)->sum('quantity_sold_kg');
+        $totalRevenue = (clone $salesQuery)->sum('total_price');
+        $grossProfit = $totalRevenue - $totalPurchaseCost;
+
+        // 5. Current Available Stock
         $categories = Category::query()
             ->when($selectedGroup, fn ($query) => $query->whereIn('id', $categoryIds))
             ->orderBy('name')
             ->get();
         $currentStock = $categories->sum(fn ($cat) => $cat->current_stock);
+
+        $incomingDetails = (clone $incomingQuery)
+            ->orderByDesc('date')
+            ->orderByDesc('id')
+            ->get()
+            ->map(function ($incoming) {
+                return [
+                    'date' => optional($incoming->date)->format('d/m/Y'),
+                    'supplier_name' => $incoming->supplier?->name ?? 'Tempat beli tidak diketahui',
+                    'group_name' => $incoming->category?->display_group_name ?? '-',
+                    'category_name' => $incoming->category?->name ?? '-',
+                    'quantity' => (float) $incoming->actual_weight,
+                    'purchase_price_per_kg' => (float) $incoming->purchase_price_per_kg,
+                    'total_purchase_price' => (float) $incoming->total_purchase_price,
+                    'receipt_weight' => (float) $incoming->receipt_weight,
+                    'shrinkage_weight' => (float) $incoming->shrinkage_weight,
+                ];
+            })
+            ->values()
+            ->all();
+
+        $salesDetails = (clone $salesQuery)
+            ->orderByDesc('date')
+            ->orderByDesc('id')
+            ->get()
+            ->map(function ($sale) {
+                return [
+                    'date' => optional($sale->date)->format('d/m/Y'),
+                    'buyer_name' => $sale->display_buyer_name,
+                    'group_name' => $sale->category?->display_group_name ?? '-',
+                    'category_name' => $sale->category?->name ?? '-',
+                    'quantity' => (float) $sale->quantity_sold_kg,
+                    'sale_price_per_kg' => (float) $sale->price_per_kg,
+                    'total_price' => (float) $sale->total_price,
+                ];
+            })
+            ->values()
+            ->all();
+
+        $activityDetails = collect($incomingDetails)
+            ->map(function ($item) {
+                return [
+                    'date' => $item['date'],
+                    'type' => 'Barang Masuk',
+                    'party_name' => $item['supplier_name'],
+                    'group_name' => $item['group_name'],
+                    'category_name' => $item['category_name'],
+                    'quantity' => $item['quantity'],
+                    'purchase_price_per_kg' => $item['purchase_price_per_kg'],
+                    'sale_price_per_kg' => null,
+                    'total_price' => $item['total_purchase_price'],
+                    'sort_date' => Carbon::createFromFormat('d/m/Y', $item['date'])->format('Y-m-d'),
+                ];
+            })
+            ->merge(collect($salesDetails)->map(function ($item) {
+                return [
+                    'date' => $item['date'],
+                    'type' => 'Penjualan',
+                    'party_name' => $item['buyer_name'],
+                    'group_name' => $item['group_name'],
+                    'category_name' => $item['category_name'],
+                    'quantity' => $item['quantity'],
+                    'purchase_price_per_kg' => null,
+                    'sale_price_per_kg' => $item['sale_price_per_kg'],
+                    'total_price' => $item['total_price'],
+                    'sort_date' => Carbon::createFromFormat('d/m/Y', $item['date'])->format('Y-m-d'),
+                ];
+            }))
+            ->sortByDesc(fn ($item) => $item['sort_date'] . '|' . $item['type'])
+            ->values()
+            ->map(function ($item) {
+                unset($item['sort_date']);
+
+                return $item;
+            })
+            ->all();
 
         // Breakdown by Category
         $breakdown = [];
@@ -113,10 +199,15 @@ class ReportController extends Controller
         return [
             'total_incoming' => $totalIncoming,
             'total_shrinkage' => $totalShrinkage,
+            'total_purchase_cost' => $totalPurchaseCost,
             'total_sales_kg' => $totalSalesKg,
             'total_revenue' => $totalRevenue,
+            'gross_profit' => $grossProfit,
             'current_stock' => $currentStock,
-            'breakdown' => $breakdown
+            'breakdown' => $breakdown,
+            'incoming_details' => $incomingDetails,
+            'sales_details' => $salesDetails,
+            'activity_details' => $activityDetails,
         ];
     }
 

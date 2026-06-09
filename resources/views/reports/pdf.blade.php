@@ -11,13 +11,14 @@
         
         .summary-box { margin-bottom: 30px; }
         .summary-table { width: 100%; border-collapse: collapse; }
-        .summary-table td { padding: 10px; border: 1px solid #ddd; width: 25%; }
+        .summary-table td { padding: 10px; border: 1px solid #ddd; width: 33.33%; }
         .label { font-size: 10px; font-weight: bold; color: #777; text-transform: uppercase; display: block; }
         .value { font-size: 14px; font-weight: bold; color: #000; }
         
         .detail-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         .detail-table th { background-color: #f2f2f2; padding: 10px; border: 1px solid #ddd; text-align: left; font-size: 11px; text-transform: uppercase; }
         .detail-table td { padding: 8px; border: 1px solid #ddd; }
+        .section-title { margin-top: 28px; margin-bottom: 8px; font-size: 14px; font-weight: bold; }
         
         .footer { position: fixed; bottom: 0; width: 100%; text-align: right; font-size: 10px; color: #999; font-style: italic; }
         .total-row { font-weight: bold; background-color: #fafafa; }
@@ -45,45 +46,58 @@
                     <span class="label">Barang Terjual</span>
                     <span class="value">{{ number_format($reportData['total_sales_kg'], 2) }} kg</span>
                 </td>
+            </tr>
+            <tr>
+                <td>
+                    <span class="label">Modal Belanja</span>
+                    <span class="value">Rp {{ number_format($reportData['total_purchase_cost'], 0, ',', '.') }}</span>
+                </td>
                 <td>
                     <span class="label">Total Pendapatan</span>
                     <span class="value">Rp {{ number_format($reportData['total_revenue'], 0, ',', '.') }}</span>
+                </td>
+                <td>
+                    <span class="label">Laba Kotor</span>
+                    <span class="value">Rp {{ number_format($reportData['gross_profit'], 0, ',', '.') }}</span>
                 </td>
             </tr>
         </table>
     </div>
 
-    <h3>Rincian Stok Per Barang</h3>
+    <h3 class="section-title">Detail Aktivitas</h3>
     <table class="detail-table">
         <thead>
             <tr>
-                <th>Kelompok</th>
+                <th>Tanggal</th>
+                <th>Jenis</th>
+                <th>Group</th>
+                <th>Tempat / Pembeli</th>
                 <th>Nama Barang</th>
-                <th>Barang Masuk</th>
-                <th>Barang Terjual</th>
-                <th>Sisa Stok</th>
+                <th>Qty</th>
+                <th>Harga Beli</th>
+                <th>Harga Jual</th>
+                <th>Total Transaksi</th>
             </tr>
         </thead>
         <tbody>
-            @foreach($reportData['breakdown'] as $item)
+            @forelse($reportData['activity_details'] as $item)
             <tr>
-                <td>{{ $item['group'] }}</td>
+                <td>{{ $item['date'] }}</td>
                 <td>{{ $item['type'] }}</td>
-                <td>{{ number_format($item['incoming'], 2) }} kg</td>
-                <td>{{ number_format($item['sales'], 2) }} kg</td>
-                <td><strong>{{ number_format($item['current_stock'], 2) }} kg</strong></td>
+                <td>{{ $item['group_name'] }}</td>
+                <td>{{ $item['party_name'] }}</td>
+                <td>{{ $item['category_name'] }}</td>
+                <td>{{ number_format($item['quantity'], 2) }} kg</td>
+                <td>{{ $item['purchase_price_per_kg'] !== null ? 'Rp ' . number_format($item['purchase_price_per_kg'], 0, ',', '.') : '-' }}</td>
+                <td>{{ $item['sale_price_per_kg'] !== null ? 'Rp ' . number_format($item['sale_price_per_kg'], 0, ',', '.') : '-' }}</td>
+                <td>{{ $item['total_price'] !== null ? 'Rp ' . number_format($item['total_price'], 0, ',', '.') : '-' }}</td>
             </tr>
-            @endforeach
+            @empty
+            <tr>
+                <td colspan="9">Belum ada aktivitas pada periode ini.</td>
+            </tr>
+            @endforelse
         </tbody>
-        <tfoot>
-            <tr class="total-row">
-                <td>TOTAL GLOBAL</td>
-                <td>{{ $selectedGroup ?: 'Semua Grup' }}</td>
-                <td>{{ number_format($reportData['total_incoming'], 2) }} kg</td>
-                <td>{{ number_format($reportData['total_sales_kg'], 2) }} kg</td>
-                <td>{{ number_format($reportData['current_stock'], 2) }} kg</td>
-            </tr>
-        </tfoot>
     </table>
 
     <div class="footer">

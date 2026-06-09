@@ -15,11 +15,18 @@ class StockAdjustmentController extends Controller
      */
     public function index()
     {
+        $categories = Category::query()
+            ->withSum('incomingStocks', 'actual_weight')
+            ->withSum('sales', 'quantity_sold_kg')
+            ->withSum('adjustments', 'difference')
+            ->orderBy('group_name')
+            ->orderBy('name')
+            ->get();
         $adjustments = StockAdjustment::with(['category', 'user'])
             ->latest()
             ->paginate(10);
 
-        return view('stock_adjustments.index', compact('adjustments'));
+        return view('stock_adjustments.index', compact('adjustments', 'categories'));
     }
 
     /**
@@ -32,10 +39,12 @@ class StockAdjustmentController extends Controller
             ->orderBy('name')
             ->get();
         $groupedCategories = $categories->groupBy(fn ($category) => $category->display_group_name ?: 'Lainnya');
+        $selectedCategoryId = request()->integer('category_id');
 
         return view('stock_adjustments.create', compact(
             'categories',
-            'groupedCategories'
+            'groupedCategories',
+            'selectedCategoryId'
         ));
     }
 
@@ -65,6 +74,13 @@ class StockAdjustmentController extends Controller
                 'adjusted_by' => Auth::id(),
             ]);
         });
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => "Hasil cek stok untuk {$category->name} berhasil disimpan.",
+                'difference' => number_format($difference, 2),
+            ], 201);
+        }
 
         return redirect()->route('stock-adjustments.index')
             ->with('success', "Hasil cek stok untuk {$category->name} berhasil disimpan. Selisih: " . number_format($difference, 2) . " kg.");

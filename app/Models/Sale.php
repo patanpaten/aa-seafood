@@ -9,6 +9,7 @@ class Sale extends Model
     protected $fillable = [
         'date',
         'partner_id',
+        'buyer_name',
         'category_id',
         'price_type',
         'quantity_sold_kg',
@@ -24,6 +25,11 @@ class Sale extends Model
     public function category()
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function getDisplayBuyerNameAttribute(): string
+    {
+        return $this->buyer_name ?: ($this->partner?->name ?? 'Pembeli Umum');
     }
 
     protected $casts = [
