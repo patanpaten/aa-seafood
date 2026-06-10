@@ -15,6 +15,10 @@ class Sale extends Model
         'quantity_sold_kg',
         'price_per_kg',
         'total_price',
+        'status',          
+    'delivery_proof',
+    'driver_name',  
+    'driver_phone',
     ];
 
     public function partner()
