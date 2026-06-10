@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Models\IncomingStock;
 use App\Models\StockAdjustment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,20 +14,74 @@ class StockAdjustmentController extends Controller
     /**
      * Display a listing of the stock adjustments.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $categories = Category::query()
-            ->withSum('incomingStocks', 'actual_weight')
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $selectedSupplierId = $request->input('supplier_id');
+        $selectedCategoryId = $request->input('category_id');
+
+        // 1. Ambil semua kategori
+        $categoriesQuery = Category::query();
+        if ($selectedCategoryId) {
+            $categoriesQuery->where('id', $selectedCategoryId);
+        }
+        $categoriesList = Category::orderBy('name')->get();
+        $categories = $categoriesQuery->get()->keyBy('id');
+
+        // 2. Hitung Saldo Awal (Stok sebelum startDate) untuk tiap kategori
+        $initialBalances = [];
+        foreach ($categories as $id => $cat) {
+            $incomingBefore = \App\Models\IncomingStock::where('category_id', $id);
+            $salesBefore = \App\Models\Sale::where('category_id', $id);
+            $adjBefore = \App\Models\StockAdjustment::where('category_id', $id);
+
+            if ($startDate) {
+                $incomingBefore->where('created_at', '<', $startDate);
+                $salesBefore->where('created_at', '<', $startDate);
+                $adjBefore->where('created_at', '<', $startDate);
+            } else {
+                // Jika tidak ada filter tanggal, saldo awal adalah 0
+                $initialBalances[$id] = 0;
+                continue;
+            }
+
+            $initialBalances[$id] = $incomingBefore->sum('actual_weight') 
+                                  - $salesBefore->sum('quantity_sold_kg') 
+                                  + $adjBefore->sum('difference');
+        }
+
+        // 3. Ambil detail transaksi stok masuk yang TERFILTER (Urutkan dari yang LAMA ke BARU untuk perhitungan rolling)
+        $incomingStocksQuery = IncomingStock::with(['category', 'supplier']);
+        if ($startDate) $incomingStocksQuery->whereDate('created_at', '>=', $startDate);
+        if ($endDate) $incomingStocksQuery->whereDate('created_at', '<=', $endDate);
+        if ($selectedSupplierId) $incomingStocksQuery->where('supplier_id', $selectedSupplierId);
+        if ($selectedCategoryId) $incomingStocksQuery->where('category_id', $selectedCategoryId);
+
+        $incomingStocks = $incomingStocksQuery->oldest()->get()
+            ->groupBy('category_id');
+
+        // 4. Hitung Sisa Stok Global (Real-time) untuk header/modal
+        $categoriesWithSum = Category::withSum('incomingStocks', 'actual_weight')
             ->withSum('sales', 'quantity_sold_kg')
             ->withSum('adjustments', 'difference')
-            ->orderBy('group_name')
-            ->orderBy('name')
-            ->get();
+            ->get()
+            ->keyBy('id');
+
+        $suppliers = \App\Models\Supplier::orderBy('name')->get();
         $adjustments = StockAdjustment::with(['category', 'user'])
             ->latest()
             ->paginate(10);
 
-        return view('stock_adjustments.index', compact('adjustments', 'categories'));
+        return view('stock_adjustments.index', compact(
+            'incomingStocks', 
+            'categories', 
+            'categoriesWithSum',
+            'initialBalances',
+            'adjustments',
+            'suppliers',
+            'categoriesList'
+        ));
     }
 
     /**

@@ -18,32 +18,53 @@
     </div>
 
     <!-- Filter Card -->
-    <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-8 mb-10">
-        <form action="{{ route('reports.index') }}" method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
-            <div>
-                <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">Dari Tanggal</label>
-                <input type="date" name="start_date" value="{{ $startDate }}" 
-                    class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition font-semibold text-slate-700">
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">Sampai Tanggal</label>
-                <input type="date" name="end_date" value="{{ $endDate }}" 
-                    class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition font-semibold text-slate-700">
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">Kelompok Barang</label>
-                <select name="group" class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition font-semibold text-slate-700 appearance-none">
-                    <option value="">Semua Grup</option>
-                    @foreach($categoryGroups as $groupName)
-                        <option value="{{ $groupName }}" @selected($selectedGroup === $groupName)>{{ $groupName }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-5 rounded-2xl shadow-lg transition-all transform active:scale-[0.98] uppercase tracking-widest text-sm">
-                Filter Laporan
+    <form method="GET" action="{{ route('reports.index') }}" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end mb-8 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+    
+        <div>
+            <label for="start_date" class="block text-sm font-semibold text-slate-700 mb-1">Dari Tanggal</label>
+            <input type="date" name="start_date" id="start_date" value="{{ request('start_date', $startDate) }}" 
+                   class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-slate-700">
+        </div>
+        
+        <div>
+            <label for="end_date" class="block text-sm font-semibold text-slate-700 mb-1">Sampai Tanggal</label>
+            <input type="date" name="end_date" id="end_date" value="{{ request('end_date', $endDate) }}" 
+                   class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-slate-700">
+        </div>
+    
+        <div>
+            <label for="group" class="block text-sm font-semibold text-slate-700 mb-1">Grup</label>
+            <select name="group" id="group" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-slate-700">
+                <option value="">Semua Grup</option>
+                @foreach($categoryGroups as $groupOption)
+                    <option value="{{ $groupOption }}" {{ request('group', $selectedGroup) == $groupOption ? 'selected' : '' }}>
+                        {{ $groupOption }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+    
+        <div>
+            <label for="category_id" class="block text-sm font-semibold text-slate-700 mb-1">Barang</label>
+            <select name="category_id" id="category_id" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-slate-700">
+                <option value="">Semua Barang</option>
+                @foreach($categoriesList as $category)
+                    <option value="{{ $category->id }}" {{ request('category_id', $selectedCategory) == $category->id ? 'selected' : '' }}>
+                        {{ $category->name }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+    
+        <div>
+            <button type="submit" class="w-full inline-flex items-center justify-center gap-2 px-6 py-2 bg-sky-600 text-white font-medium rounded-xl hover:bg-sky-700 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z" />
+                </svg>
+                Terapkan Filter
             </button>
-        </form>
-    </div>
+        </div>
+    </form>
 
     @if($selectedGroup)
         <div class="mb-6">

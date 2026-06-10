@@ -21,14 +21,19 @@ class SupplierController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:255|unique:suppliers,name',
             'contact' => 'nullable|string|max:255',
             'address' => 'nullable|string',
         ]);
 
-        Supplier::create($validated);
+        $supplier = Supplier::create($validated);
 
-        return redirect()->route('suppliers.index')->with('success', 'Data tempat beli berhasil ditambahkan.');
+        // WAJIB DITAMBAHKAN AGAR BISA DIPANGGIL LEWAT AJAX POP-UP
+        if ($request->wantsJson()) {
+            return response()->json($supplier, 201);
+        }
+
+        return redirect()->route('incoming-stocks.create')->with('success', 'Supplier berhasil ditambahkan.');
     }
 
     public function edit(Supplier $supplier)
@@ -39,19 +44,23 @@ class SupplierController extends Controller
     public function update(Request $request, Supplier $supplier)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:255|unique:suppliers,name,' . $supplier->id,
             'contact' => 'nullable|string|max:255',
             'address' => 'nullable|string',
         ]);
 
         $supplier->update($validated);
 
-        return redirect()->route('suppliers.index')->with('success', 'Data tempat beli berhasil diperbarui.');
+        if ($request->wantsJson()) {
+            return response()->json($supplier, 200);
+        }
+
+        return redirect()->route('incoming-stocks.create')->with('success', 'Data tempat beli berhasil diperbarui.');
     }
 
     public function destroy(Supplier $supplier)
     {
         $supplier->delete();
-        return redirect()->route('suppliers.index')->with('success', 'Data tempat beli berhasil dihapus.');
+        return redirect()->route('incoming-stocks.create')->with('success', 'Data tempat beli berhasil dihapus.');
     }
 }

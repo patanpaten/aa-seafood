@@ -42,8 +42,15 @@ Route::middleware(['auth'])->group(function () {
         });
 
         // Master Data CRUDs
-        Route::resource('suppliers', SupplierController::class)->except(['show']);
-        Route::resource('partners', PartnerController::class)->except(['show']);
+        Route::get('suppliers', function () {
+            return redirect()->route('incoming-stocks.create');
+        })->name('suppliers.index');
+        Route::get('partners', function () {
+            return redirect()->route('sales.create');
+        })->name('partners.index');
+
+        Route::resource('suppliers', SupplierController::class)->except(['show', 'index']);
+        Route::resource('partners', PartnerController::class)->except(['show', 'index']);
         Route::resource('categories', CategoryController::class)->except(['show']);
 
         // Stock Adjustment (Stock Opname)

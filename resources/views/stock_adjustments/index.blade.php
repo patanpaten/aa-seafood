@@ -12,6 +12,52 @@
 
     <div id="stock-adjustment-feedback" class="hidden mb-8 rounded-2xl border px-5 py-4 text-sm font-semibold"></div>
 
+    <!-- Filter Card -->
+    <form method="GET" action="{{ route('stock-adjustments.index') }}" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end mb-10 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+        <div>
+            <label for="start_date" class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Dari Tanggal</label>
+            <input type="date" name="start_date" id="start_date" value="{{ request('start_date') }}" 
+                   class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 text-sm font-bold text-slate-700 outline-none transition">
+        </div>
+        
+        <div>
+            <label for="end_date" class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Sampai Tanggal</label>
+            <input type="date" name="end_date" id="end_date" value="{{ request('end_date') }}" 
+                   class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 text-sm font-bold text-slate-700 outline-none transition">
+        </div>
+    
+        <div>
+            <label for="supplier_id" class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Tempat Beli</label>
+            <select name="supplier_id" id="supplier_id" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 text-sm font-bold text-slate-700 outline-none transition appearance-none cursor-pointer">
+                <option value="">Semua Tempat</option>
+                @foreach($suppliers as $supplier)
+                    <option value="{{ $supplier->id }}" {{ request('supplier_id') == $supplier->id ? 'selected' : '' }}>
+                        {{ $supplier->name }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+    
+        <div>
+            <label for="category_id" class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Nama Barang</label>
+            <select name="category_id" id="category_id" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 text-sm font-bold text-slate-700 outline-none transition appearance-none cursor-pointer">
+                <option value="">Semua Barang</option>
+                @foreach($categoriesList as $cat)
+                    <option value="{{ $cat->id }}" {{ request('category_id') == $cat->id ? 'selected' : '' }}>
+                        {{ $cat->name }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+    
+        <div>
+            <button type="submit" class="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-2xl shadow-xl shadow-blue-100 transition-all transform active:scale-95 uppercase text-[10px] tracking-widest">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                Filter Data
+            </button>
+        </div>
+    </form>
+
     <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden mb-10">
         <div class="px-8 py-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
             <h3 class="text-sm font-extrabold text-slate-900 uppercase tracking-widest">Stok Yang Tersedia Di Gudang</h3>
@@ -21,53 +67,139 @@
             <table class="w-full text-left border-collapse">
                 <thead>
                     <tr class="bg-slate-50/50 border-b border-slate-100">
+                        <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Tanggal & Waktu</th>
+                        <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Tempat Beli</th>
                         <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Kelompok</th>
                         <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Nama Barang</th>
-                        <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Barang Masuk</th>
-                        <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Barang Terjual</th>
-                        <th class="px-8 py-5 text-[10px] font-bold text-blue-400 uppercase tracking-[0.2em]">Sisa Stok</th>
+                        <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] text-right">Barang Masuk</th>
+                        <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] text-right">Sisa Stok</th>
+                        <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] text-right">Total Akumulasi</th>
                         <th class="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-50">
-                    @forelse($categories as $category)
+                    @forelse($incomingStocks as $categoryId => $stocks)
                         @php
-                            $currentStock = ((float) ($category->incoming_stocks_sum_actual_weight ?? 0))
-                                - ((float) ($category->sales_sum_quantity_sold_kg ?? 0))
-                                + ((float) ($category->adjustments_sum_difference ?? 0));
+                            $category = $categories->get($categoryId);
+                            $categoryGlobal = $categoriesWithSum->get($categoryId);
+                            $rollingBalance = (float) ($initialBalances[$categoryId] ?? 0); // Mulai dari saldo sebelum filter
+                            
+                            $globalSisa = ($categoryGlobal->incoming_stocks_sum_actual_weight ?? 0) 
+                                        - ($categoryGlobal->sales_sum_quantity_sold_kg ?? 0) 
+                                        + ($categoryGlobal->adjustments_sum_difference ?? 0);
                         @endphp
-                        <tr class="hover:bg-slate-50/50 transition-colors">
-                            <td class="px-8 py-6">
-                                <span class="inline-flex items-center px-3 py-2 bg-slate-100 text-slate-500 rounded-xl text-xs font-bold uppercase tracking-widest">
-                                    {{ $category->display_group_name }}
-                                </span>
-                            </td>
-                            <td class="px-8 py-6 font-bold text-slate-700">{{ $category->name }}</td>
-                            <td class="px-8 py-6 text-sm font-medium text-slate-500">{{ number_format($category->incoming_stocks_sum_actual_weight ?? 0, 2) }} kg</td>
-                            <td class="px-8 py-6 text-sm font-medium text-slate-500">{{ number_format($category->sales_sum_quantity_sold_kg ?? 0, 2) }} kg</td>
-                            <td class="px-8 py-6">
-                                <span class="inline-flex items-center px-4 py-2 bg-blue-50 text-blue-600 rounded-xl font-black text-sm">
-                                    {{ number_format($currentStock, 2) }} kg
-                                </span>
-                            </td>
-                            <td class="px-8 py-6 text-center">
-                                <button
-                                    type="button"
-                                    class="open-stock-adjustment-modal inline-flex items-center justify-center w-11 h-11 text-orange-500 hover:text-orange-600 hover:bg-orange-50 rounded-2xl transition-all"
-                                    data-category-id="{{ $category->id }}"
-                                    data-category-name="{{ $category->name }}"
-                                    data-category-group="{{ $category->display_group_name }}"
-                                    data-current-stock="{{ number_format($currentStock, 2, '.', '') }}"
-                                    title="Edit Stok"
-                                    aria-label="Edit Stok"
-                                >
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                                </button>
+                        
+                        <!-- Header Kategori -->
+                        <tr class="bg-slate-50/30">
+                            <td colspan="8" class="px-8 py-4">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <span class="inline-flex items-center px-2.5 py-1 bg-blue-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest">
+                                            {{ $category->display_group_name }}
+                                        </span>
+                                        <h4 class="text-sm font-black text-slate-900 uppercase tracking-tight">{{ $category->name }}</h4>
+                                        <span class="text-[10px] font-bold text-slate-400 bg-white px-2 py-0.5 rounded border border-slate-100 italic">Saldo Awal: {{ number_format($rollingBalance, 2) }} kg</span>
+                                    </div>
+                                    <div class="flex items-center gap-6">
+                                        <div class="flex flex-col items-end">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Sisa Stok Gudang</span>
+                                                <div class="group relative cursor-help">
+                                                    <svg class="w-3 h-3 text-slate-300 hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                                    <!-- Tooltip Rincian -->
+                                                    <div class="absolute bottom-full right-0 mb-2 w-48 hidden group-hover:block z-20">
+                                                        <div class="bg-slate-900 text-white text-[10px] p-3 rounded-xl shadow-xl border border-white/10">
+                                                            <p class="font-bold mb-2 border-b border-white/10 pb-1 uppercase tracking-wider text-blue-400">Rumus Perhitungan</p>
+                                                            <div class="space-y-1.5 font-medium">
+                                                                <div class="flex justify-between">
+                                                                    <span class="text-slate-400">Total Masuk:</span>
+                                                                    <span>{{ number_format($categoryGlobal->incoming_stocks_sum_actual_weight ?? 0, 2) }} kg</span>
+                                                                </div>
+                                                                <div class="flex justify-between">
+                                                                    <span class="text-slate-400">Total Jual:</span>
+                                                                    <span>-{{ number_format($categoryGlobal->sales_sum_quantity_sold_kg ?? 0, 2) }} kg</span>
+                                                                </div>
+                                                                @if(($categoryGlobal->adjustments_sum_difference ?? 0) != 0)
+                                                                <div class="flex justify-between">
+                                                                    <span class="text-slate-400">Penyesuaian:</span>
+                                                                    <span class="{{ $categoryGlobal->adjustments_sum_difference > 0 ? 'text-emerald-400' : 'text-rose-400' }}">
+                                                                        {{ $categoryGlobal->adjustments_sum_difference > 0 ? '+' : '' }}{{ number_format($categoryGlobal->adjustments_sum_difference, 2) }} kg
+                                                                    </span>
+                                                                </div>
+                                                                @endif
+                                                                <div class="pt-1 mt-1 border-t border-white/10 flex justify-between font-black text-blue-400">
+                                                                    <span>SISA AKHIR:</span>
+                                                                    <span>{{ number_format($globalSisa, 2) }} kg</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="w-2 h-2 bg-slate-900 rotate-45 absolute -bottom-1 right-2"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <div class="hidden sm:flex items-center gap-1.5 px-2 py-0.5 bg-slate-100 rounded-lg border border-slate-200">
+                                                    <span class="text-[9px] font-bold text-slate-500">{{ number_format($categoryGlobal->incoming_stocks_sum_actual_weight ?? 0, 1) }} (M)</span>
+                                                    <span class="text-[9px] font-bold text-slate-300">|</span>
+                                                    <span class="text-[9px] font-bold text-slate-500">{{ number_format($categoryGlobal->sales_sum_quantity_sold_kg ?? 0, 1) }} (J)</span>
+                                                </div>
+                                                <span class="text-sm font-black text-blue-600">{{ number_format($globalSisa, 2) }} kg</span>
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            class="open-stock-adjustment-modal w-9 h-9 flex items-center justify-center bg-white border border-slate-200 text-orange-500 rounded-xl hover:bg-orange-50 hover:border-orange-200 transition-all shadow-sm"
+                                            data-category-id="{{ $category->id }}"
+                                            data-category-name="{{ $category->name }}"
+                                            data-category-group="{{ $category->display_group_name }}"
+                                            data-current-stock="{{ number_format($globalSisa, 2, '.', '') }}"
+                                        >
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
                             </td>
                         </tr>
+
+                        <!-- Baris Detail Stok Masuk -->
+                        @foreach($stocks as $incoming)
+                            @php
+                                $prevBalance = $rollingBalance;
+                                $rollingBalance += $incoming->actual_weight;
+                            @endphp
+                            <tr class="hover:bg-slate-50/50 transition-colors group">
+                                <td class="px-12 py-4">
+                                    <span class="text-xs font-medium text-slate-500">{{ $incoming->created_at->format('d/m/Y H:i') }}</span>
+                                </td>
+                                <td class="px-8 py-4">
+                                    <span class="text-xs font-bold text-slate-600">{{ $incoming->supplier->name ?? '-' }}</span>
+                                </td>
+                                <td class="px-8 py-4">
+                                    <span class="inline-flex items-center px-2.5 py-1 bg-slate-100 text-slate-400 rounded-lg text-[10px] font-bold uppercase tracking-widest">
+                                        {{ $incoming->category->display_group_name }}
+                                    </span>
+                                </td>
+                                <td class="px-8 py-4">
+                                    <span class="text-xs font-bold text-slate-600">{{ $incoming->category->name }}</span>
+                                </td>
+                                <td class="px-8 py-4 text-right">
+                                    <span class="text-sm font-bold text-slate-600">+ {{ number_format($incoming->actual_weight, 2) }} kg</span>
+                                </td>
+                                <td class="px-8 py-4 text-right">
+                                    <span class="text-sm font-bold text-blue-500">{{ number_format($prevBalance, 2) }} kg</span>
+                                </td>
+                                <td class="px-8 py-4 text-right">
+                                    <span class="text-sm font-black text-emerald-600">{{ number_format($rollingBalance, 2) }} kg</span>
+                                </td>
+                                <td class="px-8 py-4"></td>
+                            </tr>
+                        @endforeach
+                        
+                        <!-- Spacer row -->
+                        <tr class="h-4"></tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-8 py-12 text-center text-slate-400 font-medium italic">Belum ada data barang di gudang.</td>
+                            <td colspan="8" class="px-8 py-12 text-center text-slate-400 font-medium italic">Belum ada data stok masuk di gudang.</td>
                         </tr>
                     @endforelse
                 </tbody>

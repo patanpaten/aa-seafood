@@ -21,14 +21,18 @@ class PartnerController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:255|unique:partners,name',
             'contact' => 'nullable|string|max:255',
             'address' => 'nullable|string',
         ]);
 
-        Partner::create($validated);
+        $partner = Partner::create($validated);
 
-        return redirect()->route('partners.index')->with('success', 'Data pelanggan berhasil ditambahkan.');
+        if ($request->wantsJson()) {
+            return response()->json($partner, 201);
+        }
+
+        return redirect()->route('sales.create')->with('success', 'Data pelanggan berhasil ditambahkan.');
     }
 
     public function edit(Partner $partner)
@@ -39,19 +43,23 @@ class PartnerController extends Controller
     public function update(Request $request, Partner $partner)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:255|unique:partners,name,' . $partner->id,
             'contact' => 'nullable|string|max:255',
             'address' => 'nullable|string',
         ]);
 
         $partner->update($validated);
 
-        return redirect()->route('partners.index')->with('success', 'Data pelanggan berhasil diperbarui.');
+        if ($request->wantsJson()) {
+            return response()->json($partner, 200);
+        }
+
+        return redirect()->route('sales.create')->with('success', 'Data pelanggan berhasil diperbarui.');
     }
 
     public function destroy(Partner $partner)
     {
         $partner->delete();
-        return redirect()->route('partners.index')->with('success', 'Data pelanggan berhasil dihapus.');
+        return redirect()->route('sales.create')->with('success', 'Data pelanggan berhasil dihapus.');
     }
 }
