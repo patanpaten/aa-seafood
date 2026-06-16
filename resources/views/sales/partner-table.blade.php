@@ -1,6 +1,17 @@
 @props(['partners'])
 
 <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
+    <div class="px-8 py-4 border-b border-slate-100 bg-slate-50/30 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+            <input type="checkbox" id="select-all-sales" class="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+            <label for="select-all-sales" class="text-xs font-bold text-slate-500 uppercase tracking-wider">Pilih Semua untuk Pengiriman Bulk</label>
+        </div>
+        <div class="flex items-center gap-3">
+            <button type="button" onclick="bulkMarkAsDelivering()" id="bulk-delivery-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-sm shadow-blue-100">
+                Kirim yang Dipilih
+            </button>
+        </div>
+    </div>
     <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
             <thead>
@@ -68,6 +79,9 @@
                                 <table class="w-full text-left text-sm">
                                     <thead>
                                         <tr class="border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                            <th class="px-4 py-3 w-10">
+                                                <input type="checkbox" class="partner-sale-checkbox w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer" data-partner-id="{{ $partner->id }}">
+                                            </th>
                                             <th class="px-4 py-3">Tanggal</th>
                                             <th class="px-4 py-3">Tipe Seafood</th>
                                             <th class="px-4 py-3">Pengantar</th>
@@ -79,10 +93,27 @@
                                     </thead>
                                     <tbody class="divide-y divide-slate-50">
                                         @forelse($partner->sales as $sale)
-                                            @include('sales.sale-detail-row')
+                                            <tr class="hover:bg-slate-50/50 transition-colors text-slate-600">
+                                                <td class="px-4 py-3.5 w-10">
+                                                    @if($sale->status === 'sedang diproses')
+                                                        <input 
+                                                            type="checkbox" 
+                                                            class="sale-checkbox w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer" 
+                                                            data-sale-id="{{ $sale->id }}"
+                                                            data-driver-name="{{ $sale->driver_name }}"
+                                                            data-driver-phone="{{ $sale->driver_phone }}"
+                                                            data-buyer-name="{{ $partner->name ?? $sale->buyer_name }}"
+                                                            data-buyer-address="{{ $partner->address ?? '' }}"
+                                                            data-category-name="{{ $sale->category->name ?? '-' }}"
+                                                            data-quantity="{{ $sale->quantity_sold_kg }}"
+                                                        >
+                                                    @endif
+                                                </td>
+                                                @include('sales.sale-detail-row')
+                                            </tr>
                                         @empty
                                             <tr>
-                                                <td colspan="7" class="px-4 py-6 text-center text-xs text-slate-400 italic">Belum ada riwayat pembelian seafood untuk restoran ini.</td>
+                                                <td colspan="8" class="px-4 py-6 text-center text-xs text-slate-400 italic">Belum ada riwayat pembelian seafood untuk restoran ini.</td>
                                             </tr>
                                         @endforelse
                                     </tbody>
@@ -128,6 +159,9 @@
                                 <table class="w-full text-left text-sm">
                                     <thead>
                                         <tr class="border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                            <th class="px-4 py-3 w-10">
+                                                <input type="checkbox" class="partner-sale-checkbox w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer" data-partner-id="retail-group">
+                                            </th>
                                             <th class="px-4 py-3">Tanggal</th>
                                             <th class="px-4 py-3">Nama Pembeli & Jenis</th>
                                             <th class="px-4 py-3">Pengantar</th>
@@ -139,7 +173,24 @@
                                     </thead>
                                     <tbody class="divide-y divide-slate-50">
                                         @foreach($retailSales as $sale)
-                                            @include('sales.sale-detail-row')
+                                            <tr class="hover:bg-slate-50/50 transition-colors text-slate-600">
+                                                <td class="px-4 py-3.5 w-10">
+                                                    @if($sale->status === 'sedang diproses')
+                                                        <input 
+                                                            type="checkbox" 
+                                                            class="sale-checkbox w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer" 
+                                                            data-sale-id="{{ $sale->id }}"
+                                                            data-driver-name="{{ $sale->driver_name }}"
+                                                            data-driver-phone="{{ $sale->driver_phone }}"
+                                                            data-buyer-name="{{ $sale->buyer_name }}"
+                                                            data-buyer-address=""
+                                                            data-category-name="{{ $sale->category->name ?? '-' }}"
+                                                            data-quantity="{{ $sale->quantity_sold_kg }}"
+                                                        >
+                                                    @endif
+                                                </td>
+                                                @include('sales.sale-detail-row')
+                                            </tr>
                                         @endforeach
                                     </tbody>
                                 </table>

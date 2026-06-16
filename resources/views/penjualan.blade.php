@@ -20,9 +20,176 @@
     @include('sales.edit-sale-modal')
 @endsection
 
-
 @push('scripts')
 <script>
+    const groupedCategories = @json($groupedCategories);
+
+    // Toggle all sales checkbox
+    document.getElementById('select-all-sales').addEventListener('change', function() {
+        const checked = this.checked;
+        document.querySelectorAll('.sale-checkbox').forEach(checkbox => {
+            checkbox.checked = checked;
+        });
+        updateBulkButton();
+    });
+
+    // Partner checkbox toggle
+    document.querySelectorAll('.partner-sale-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const partnerId = this.dataset.partnerId;
+            const row = document.getElementById(`delivery-row-${partnerId}`);
+            if (row) {
+                const checkboxes = row.querySelectorAll('.sale-checkbox');
+                checkboxes.forEach(cb => cb.checked = this.checked);
+            }
+            updateBulkButton();
+        });
+    });
+
+    // Individual checkbox change
+    document.querySelectorAll('.sale-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', updateBulkButton);
+    });
+
+    function updateBulkButton() {
+        const selected = document.querySelectorAll('.sale-checkbox:checked');
+        const btn = document.getElementById('bulk-delivery-btn');
+        btn.disabled = selected.length === 0;
+    }
+
+    async function bulkMarkAsDelivering() {
+        const selectedCheckboxes = document.querySelectorAll('.sale-checkbox:checked');
+        
+        if (selectedCheckboxes.length === 0) {
+            alert('Pilih setidaknya satu transaksi untuk dikirim!');
+            return;
+        }
+
+        // Collect data from selected checkboxes
+        const selectedData = Array.from(selectedCheckboxes).map(cb => ({
+            id: cb.dataset.saleId,
+            driverName: cb.dataset.driverName,
+            driverPhone: cb.dataset.driverPhone,
+            buyerName: cb.dataset.buyerName,
+            buyerAddress: cb.dataset.buyerAddress,
+            categoryName: cb.dataset.categoryName,
+            quantity: cb.dataset.quantity
+        }));
+
+        // Group by driver first, then group driver's items by buyer
+        const drivers = {};
+        selectedData.forEach(item => {
+            const driverKey = item.driverPhone || 'no-driver';
+            if (!drivers[driverKey]) {
+                drivers[driverKey] = {
+                    name: item.driverName || 'Pengantar',
+                    phone: item.driverPhone,
+                    buyers: {} // key = buyerName, value = { address, items: [] }
+                };
+            }
+
+            const buyerKey = item.buyerName;
+            if (!drivers[driverKey].buyers[buyerKey]) {
+                drivers[driverKey].buyers[buyerKey] = {
+                    address: item.buyerAddress,
+                    items: []
+                };
+            }
+
+            drivers[driverKey].buyers[buyerKey].items.push(item);
+        });
+
+        // Show modal or process each driver
+        const driverKeys = Object.keys(drivers);
+        if (driverKeys.length === 0) {
+            alert('Tidak ada transaksi yang dapat dikirim!');
+            return;
+        }
+
+        let proceed = true;
+        for (const driverKey of driverKeys) {
+            const driver = drivers[driverKey];
+            
+            if (!driver.phone) {
+                alert(`Driver ${driver.name} tidak memiliki nomor WhatsApp! Mohon isi terlebih dahulu.`);
+                proceed = false;
+                break;
+            }
+
+            // Generate WhatsApp message
+            let message = `Halo ${driver.name},\n\nBerikut tugas pengantaran pesanan:\n\n`;
+            
+            for (const buyerName in driver.buyers) {
+                const buyer = driver.buyers[buyerName];
+                message += `*Toko: ${buyerName}*\n`;
+                if (buyer.address) {
+                    message += `*Alamat: ${buyer.address}*\n`;
+                }
+                message += `*Barang:*\n`;
+                buyer.items.forEach((item, idx) => {
+                    message += `${idx + 1}. ${item.categoryName} (${parseFloat(item.quantity).toLocaleString('id-ID')} Kg)\n`;
+                });
+                message += `\n`;
+            }
+            
+            // Add upload proof links for each sale (optional, but let's keep it)
+            message += `Jika barang sudah sampai, mohon upload bukti pengiriman ya!\n`;
+            
+            // Clean phone number
+            let cleanPhone = driver.phone.replace(/[^0-9]/g, '');
+            if (cleanPhone.startsWith('0')) {
+                cleanPhone = '62' + cleanPhone.substring(1);
+            } else if (cleanPhone.startsWith('8')) {
+                cleanPhone = '62' + cleanPhone;
+            }
+
+            if (!confirm(`Yakin ingin mengirim pesan ke ${driver.name} (${cleanPhone}) dan mengubah status ${selectedData.length} transaksi?`)) {
+                proceed = false;
+                break;
+            }
+
+            // Open WhatsApp
+            const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+            window.open(waUrl, '_blank');
+        }
+
+        if (!proceed) {
+            return;
+        }
+
+        // Proceed to update status on backend
+        const saleIds = selectedData.map(item => item.id);
+        const btn = document.getElementById('bulk-delivery-btn');
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Memproses...';
+
+        try {
+            const response = await fetch('{{ route("sales.bulk-delivery") }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({ sale_ids: saleIds }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                alert(data.message);
+                window.location.reload();
+            } else {
+                throw new Error(data.message || 'Gagal memproses pengiriman');
+            }
+        } catch (error) {
+            alert(error.message);
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
+    }
+
     // FUNGSI UNTUK MODAL EDIT PELANGGAN (BARU)
     function openEditPartnerModal(id, name, contact, address) {
         document.getElementById('edit_partner_id').value = id;
@@ -162,6 +329,89 @@
         }
     }
 
+    // FUNGSI UNTUK MODAL PENJUALAN DENGAN MULTI ITEM
+    let saleItemIndex = 0;
+
+    function getCategoryOptionsHtml() {
+        let html = '<option value="">Pilih Barang</option>';
+        for (let groupName in groupedCategories) {
+            html += `<optgroup label="${groupName}">`;
+            groupedCategories[groupName].forEach(cat => {
+                html += `<option value="${cat.id}" data-retail-price="${cat.retail_price}" data-wholesale-price="${cat.wholesale_price}">${cat.name}</option>`;
+            });
+            html += '</optgroup>';
+        }
+        return html;
+    }
+
+    function addSaleItem() {
+        const container = document.getElementById('sale-items-container');
+        const index = saleItemIndex++;
+        const html = `
+            <div class="item-row bg-slate-50 border border-slate-200 rounded-2xl p-5" data-index="${index}">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Barang #${index + 1}</span>
+                    <button type="button" onclick="removeSaleItem(this)" class="text-rose-400 hover:text-rose-600 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Nama Barang</label>
+                        <select name="items[${index}][category_id]" required onchange="updateSaleItemPrice(this)"
+                            class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition font-semibold text-slate-700">
+                            ${getCategoryOptionsHtml()}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Harga/Kg</label>
+                        <input type="number" step="0.01" min="0" name="items[${index}][price_per_kg]" required oninput="updateSaleTotal()" placeholder="0"
+                            class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition font-semibold text-slate-700">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-2 ml-1">Jumlah (Kg)</label>
+                        <input type="number" step="0.01" min="0.01" name="items[${index}][quantity_sold_kg]" required oninput="updateSaleTotal()" placeholder="0.00"
+                            class="w-full px-4 py-3 bg-white border border-emerald-200 rounded-xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition font-semibold text-slate-700">
+                    </div>
+                </div>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', html);
+        updateSaleTotal();
+    }
+
+    function updateSaleItemPrice(select) {
+        const row = select.closest('.item-row');
+        const priceInput = row.querySelector('input[name*="price_per_kg"]');
+        const selectedOption = select.options[select.selectedIndex];
+        
+        if (selectedOption && selectedOption.value !== "") {
+            const retailPrice = parseFloat(selectedOption.dataset.retailPrice || 0);
+            priceInput.value = retailPrice;
+        }
+        updateSaleTotal();
+    }
+
+    function removeSaleItem(btn) {
+        btn.closest('.item-row').remove();
+        updateSaleTotal();
+    }
+
+    function formatRupiah(number) {
+        return 'Rp ' + number.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    }
+
+    function updateSaleTotal() {
+        let total = 0;
+        const items = document.querySelectorAll('#sale-items-container .item-row');
+        items.forEach(item => {
+            const price = parseFloat(item.querySelector('input[name*="price_per_kg"]').value || 0);
+            const qty = parseFloat(item.querySelector('input[name*="quantity_sold_kg"]').value || 0);
+            total += price * qty;
+        });
+        document.getElementById('sale-total-price').textContent = formatRupiah(total);
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         const modal = document.getElementById('sale-modal');
         const form = document.getElementById('sale-form');
@@ -174,15 +424,6 @@
         const buyerNameWrapper = document.getElementById('sale-buyer-name-wrapper');
         const buyerNameInput = document.getElementById('sale_buyer_name');
         const selectedName = document.getElementById('sale-selected-partner-name');
-        const categorySelect = document.getElementById('sale_category_id');
-        const priceTypeInput = document.getElementById('sale_price_type');
-        const priceInput = document.getElementById('sale_price_per_kg');
-        const priceTypeCard = document.getElementById('sale-price-type-card');
-        const priceSourceLabel = document.getElementById('sale-price-source-label');
-        const referenceRetail = document.getElementById('sale-reference-retail');
-        const referenceWholesale = document.getElementById('sale-reference-wholesale');
-        const applyRetailPriceButton = document.getElementById('sale-apply-retail-price');
-        const applyWholesalePriceButton = document.getElementById('sale-apply-wholesale-price');
         let currentMode = 'partner';
         let currentPartner = {
             id: '',
@@ -231,31 +472,6 @@
             }
         }
 
-        function getSelectedDefaultPrice() {
-            const selectedOption = categorySelect.options[categorySelect.selectedIndex];
-            const priceType = priceTypeInput.value;
-
-            return priceType === 'grosir'
-                ? selectedOption?.dataset?.wholesalePrice
-                : selectedOption?.dataset?.retailPrice;
-        }
-
-        function setPriceFromReference(type) {
-            const selectedOption = categorySelect.options[categorySelect.selectedIndex];
-            const selectedPrice = type === 'grosir'
-                ? selectedOption?.dataset?.wholesalePrice
-                : selectedOption?.dataset?.retailPrice;
-
-            if (!selectedPrice) {
-                return;
-            }
-
-            priceTypeInput.value = type;
-            priceInput.value = selectedPrice;
-            priceInput.dataset.manual = 'false';
-            syncDefaultPrice(false, type);
-        }
-
         function openModal(button) {
             currentMode = button.dataset.buyerMode || (button.dataset.partnerId ? 'partner' : 'general');
             currentPartner = {
@@ -268,7 +484,12 @@
                 ? (button.dataset.buyerName || '')
                 : (button.dataset.partnerName || '');
             syncBuyerMode();
-            syncDefaultPrice(true);
+            
+            // Reset items container and add first item
+            document.getElementById('sale-items-container').innerHTML = '';
+            saleItemIndex = 0;
+            addSaleItem();
+            
             modal.classList.remove('hidden');
             document.body.classList.add('overflow-hidden');
         }
@@ -286,61 +507,10 @@
                 address: '-',
             };
             partnerIdInput.value = '';
-            priceTypeInput.value = 'eceran';
             setPartnerSummary(currentPartner);
             buyerNameInput.required = false;
-            priceTypeCard.classList.add('hidden');
-            priceInput.value = '';
             resetErrors();
-        }
-
-        function syncDefaultPrice(forceUpdate = false, preferredType = null) {
-            const selectedOption = categorySelect.options[categorySelect.selectedIndex];
-            const retailPrice = selectedOption?.dataset?.retailPrice;
-            const wholesalePrice = selectedOption?.dataset?.wholesalePrice;
-
-            if (!retailPrice && !wholesalePrice) {
-                priceTypeCard.classList.add('hidden');
-                referenceRetail.textContent = 'Rp 0';
-                referenceWholesale.textContent = 'Rp 0';
-                if (forceUpdate) {
-                    priceInput.value = '';
-                }
-                return;
-            }
-
-            const formatter = new Intl.NumberFormat('id-ID');
-            const typedPrice = parseFloat(priceInput.value || 0);
-            const retailValue = parseFloat(retailPrice || 0);
-            const wholesaleValue = parseFloat(wholesalePrice || 0);
-            let matchedType = preferredType;
-
-            if (!matchedType) {
-                if (typedPrice > 0 && Math.abs(typedPrice - wholesaleValue) < 0.0001) {
-                    matchedType = 'grosir';
-                } else if (typedPrice > 0 && Math.abs(typedPrice - retailValue) < 0.0001) {
-                    matchedType = 'eceran';
-                } else {
-                    matchedType = priceTypeInput.value || 'eceran';
-                }
-            }
-
-            priceTypeCard.classList.remove('hidden');
-            priceSourceLabel.textContent = selectedOption.text
-                ? 'Acuan harga untuk ' + selectedOption.text
-                : '';
-            referenceRetail.textContent = 'Rp ' + formatter.format(parseFloat(retailPrice || 0));
-            referenceWholesale.textContent = 'Rp ' + formatter.format(parseFloat(wholesalePrice || 0));
-
-            if (forceUpdate || !priceInput.value || priceInput.dataset.manual !== 'true') {
-                priceTypeInput.value = preferredType || 'eceran';
-                priceInput.value = (preferredType || 'eceran') === 'grosir'
-                    ? (wholesalePrice || retailPrice || '')
-                    : (retailPrice || wholesalePrice || '');
-                priceInput.dataset.manual = 'false';
-            } else {
-                priceTypeInput.value = matchedType;
-            }
+            updateSaleTotal();
         }
 
         document.querySelectorAll('.open-sale-modal').forEach((button) => {
@@ -353,18 +523,6 @@
             button.addEventListener('click', closeModal);
         });
 
-        categorySelect.addEventListener('change', syncDefaultPrice);
-        priceInput.addEventListener('input', function () {
-            this.dataset.manual = 'true';
-            syncDefaultPrice();
-        });
-        applyRetailPriceButton.addEventListener('click', function () {
-            setPriceFromReference('eceran');
-        });
-        applyWholesalePriceButton.addEventListener('click', function () {
-            setPriceFromReference('grosir');
-        });
-
         form.addEventListener('submit', async function (event) {
             event.preventDefault();
             resetErrors();
@@ -372,13 +530,14 @@
             submitButton.textContent = 'Menyimpan...';
 
             try {
+                const formData = new FormData(form);
                 const response = await fetch(form.action, {
                     method: 'POST',
                     headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': "{{ csrf_token() }}",
+                        'Accept': 'application/json'
                     },
-                    body: new FormData(form),
+                    body: formData
                 });
 
                 const data = await response.json();
@@ -389,153 +548,154 @@
                     } else {
                         showErrors({ general: [data.message || 'Terjadi kesalahan saat menyimpan data.'] });
                     }
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Simpan Penjualan';
                     return;
                 }
 
                 closeModal();
-                showFeedback(data.total ? data.message + ' Total: Rp ' + data.total : data.message);
+                showFeedback(data.message + (data.total ? ' Total: ' + data.total : ''));
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+
             } catch (error) {
                 showErrors({ general: ['Koneksi ke server gagal. Silakan coba lagi.'] });
-            } finally {
                 submitButton.disabled = false;
                 submitButton.textContent = 'Simpan Penjualan';
             }
         });
     });
 
-
     function toggleDeliveryRow(partnerId) {
-    const row = document.getElementById(`delivery-row-${partnerId}`);
-    const arrow = document.getElementById(`icon-arrow-${partnerId}`);
-    
-    if (row.classList.contains('hidden')) {
-        // Tampilkan baris kontainer pesanan
-        row.classList.remove('hidden');
-        // Putar arrow icon ke bawah
-        arrow.classList.add('rotate-90');
-    } else {
-        // Sembunyikan baris kontainer pesanan
-        row.classList.add('hidden');
-        // Kembalikan arrow icon semula
-        arrow.classList.remove('rotate-90');
-    }
-}
-
-
-// MEMBUKA MODAL EDIT & ISI DATA OTOMATIS
-function openEditSaleModal(id, name, phone, date, categoryId, quantity, price) {
-    const modal = document.getElementById('editSaleModal');
-    const form = document.getElementById('editSaleForm');
-    
-    form.action = `/sales/${id}`; 
-    
-    // Isi data pengantar
-    document.getElementById('edit_driver_name').value = name || '';
-    document.getElementById('edit_driver_phone').value = phone || '';
-    
-    // Isi data transaksi utama (Tanggal langsung terisi & kalender tetap aktif)
-    if (date) {
-        // Jika formatnya timestamp/datetime, ambil 10 karakter pertama saja (YYYY-MM-DD)
-        const formattedDate = date.includes(' ') ? date.split(' ')[0] : date.split('T')[0];
-        document.getElementById('edit_sale_date').value = formattedDate;
-    } else {
-        document.getElementById('edit_sale_date').value = '';
-    }
-    document.getElementById('edit_sale_category_id').value = categoryId || '';
-    document.getElementById('edit_sale_quantity_sold_kg').value = quantity || '';
-    document.getElementById('edit_sale_price_per_kg').value = price || '';
-    
-    // Perbarui acuan harga card hitam berdasarkan barang terpilih
-    updateEditPriceReferences();
-    
-    // Tampilkan Modal tepat di tengah (Menggunakan flex items-center)
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    document.body.classList.add('overflow-hidden');
-}
-
-// FUNGSI UPDATE HARGA ACUAN SECARA OTOMATIS SAAT GANTI BARANG
-function updateEditPriceReferences() {
-    const select = document.getElementById('edit_sale_category_id');
-    const selectedOption = select.options[select.selectedIndex];
-    
-    const label = document.getElementById('edit-sale-price-source-label');
-    const retailText = document.getElementById('edit-sale-reference-retail');
-    const wholesaleText = document.getElementById('edit-sale-reference-wholesale');
-    
-    if (selectedOption && selectedOption.value !== "") {
-        const name = selectedOption.text.trim();
-        const retailPrice = parseFloat(selectedOption.getAttribute('data-retail-price')) || 0;
-        const wholesalePrice = parseFloat(selectedOption.getAttribute('data-wholesale-price')) || 0;
+        const row = document.getElementById(`delivery-row-${partnerId}`);
+        const arrow = document.getElementById(`icon-arrow-${partnerId}`);
         
-        label.textContent = `Acuan Harga Untuk: ${name}`;
-        retailText.textContent = `Rp ${retailPrice.toLocaleString('id-ID')}`;
-        wholesaleText.textContent = `Rp ${wholesalePrice.toLocaleString('id-ID')}`;
+        if (row.classList.contains('hidden')) {
+            // Tampilkan baris kontainer pesanan
+            row.classList.remove('hidden');
+            // Putar arrow icon ke bawah
+            arrow.classList.add('rotate-90');
+        } else {
+            // Sembunyikan baris kontainer pesanan
+            row.classList.add('hidden');
+            // Kembalikan arrow icon semula
+            arrow.classList.remove('rotate-90');
+        }
+    }
+
+    // MEMBUKA MODAL EDIT & ISI DATA OTOMATIS
+    function openEditSaleModal(id, name, phone, date, categoryId, quantity, price) {
+        const modal = document.getElementById('editSaleModal');
+        const form = document.getElementById('editSaleForm');
         
-        // Simpan data mentah ke atribut sementara untuk tombol klik
-        retailText.setAttribute('data-raw', retailPrice);
-        wholesaleText.setAttribute('data-raw', wholesalePrice);
-    } else {
-        label.textContent = "Silahkan pilih barang terlebih dahulu";
-        retailText.textContent = "Rp 0";
-        wholesaleText.textContent = "Rp 0";
+        form.action = `/sales/${id}`;
+        
+        // Isi data pengantar
+        document.getElementById('edit_driver_name').value = name || '';
+        document.getElementById('edit_driver_phone').value = phone || '';
+        
+        // Isi data transaksi utama (Tanggal langsung terisi & kalender tetap aktif)
+        if (date) {
+            // Jika formatnya timestamp/datetime, ambil 10 karakter pertama saja (YYYY-MM-DD)
+            const formattedDate = date.includes(' ') ? date.split(' ')[0] : date.split('T')[0];
+            document.getElementById('edit_sale_date').value = formattedDate;
+        } else {
+            document.getElementById('edit_sale_date').value = '';
+        }
+        document.getElementById('edit_sale_category_id').value = categoryId || '';
+        document.getElementById('edit_sale_quantity_sold_kg').value = quantity || '';
+        document.getElementById('edit_sale_price_per_kg').value = price || '';
+        
+        // Perbarui acuan harga card hitam berdasarkan barang terpilih
+        updateEditPriceReferences();
+        
+        // Tampilkan Modal tepat di tengah (Menggunakan flex items-center)
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.classList.add('overflow-hidden');
     }
-}
 
-// MEMASUKKAN HARGA ACUAN KE INPUT UTAMA SAAT TOMBOL DIKLIK
-function applyEditPrice(type) {
-    const retailText = document.getElementById('edit-sale-reference-retail');
-    const wholesaleText = document.getElementById('edit-sale-reference-wholesale');
-    const inputPrice = document.getElementById('edit_sale_price_per_kg');
-    
-    if (type === 'retail') {
-        const price = retailText.getAttribute('data-raw');
-        if(price) inputPrice.value = price;
-    } else if (type === 'wholesale') {
-        const price = wholesaleText.getAttribute('data-raw');
-        if(price) inputPrice.value = price;
+    // FUNGSI UPDATE HARGA ACUAN SECARA OTOMATIS SAAT GANTI BARANG
+    function updateEditPriceReferences() {
+        const select = document.getElementById('edit_sale_category_id');
+        const selectedOption = select.options[select.selectedIndex];
+        
+        const label = document.getElementById('edit-sale-price-source-label');
+        const retailText = document.getElementById('edit-sale-reference-retail');
+        const wholesaleText = document.getElementById('edit-sale-reference-wholesale');
+        
+        if (selectedOption && selectedOption.value !== "") {
+            const name = selectedOption.text.trim();
+            const retailPrice = parseFloat(selectedOption.getAttribute('data-retail-price')) || 0;
+            const wholesalePrice = parseFloat(selectedOption.getAttribute('data-wholesale-price')) || 0;
+            
+            label.textContent = `Acuan Harga Untuk: ${name}`;
+            retailText.textContent = `Rp ${retailPrice.toLocaleString('id-ID')}`;
+            wholesaleText.textContent = `Rp ${wholesalePrice.toLocaleString('id-ID')}`;
+            
+            // Simpan data mentah ke atribut sementara untuk tombol klik
+            retailText.setAttribute('data-raw', retailPrice);
+            wholesaleText.setAttribute('data-raw', wholesalePrice);
+        } else {
+            label.textContent = "Silakan pilih barang terlebih dahulu";
+            retailText.textContent = "Rp 0";
+            wholesaleText.textContent = "Rp 0";
+        }
     }
-}
 
-// MENUTUP MODAL
-function closeEditSaleModal() {
-    const modal = document.getElementById('editSaleModal');
-    modal.classList.remove('flex');
-    modal.classList.add('hidden');
-    document.body.classList.remove('overflow-hidden');
-}
-
-
-
-function triggerDeleteModal(saleId, buyerName) {
-    const modal = document.getElementById('deleteConfirmationModal');
-    const form = document.getElementById('deleteSaleForm');
-    const namePlaceholder = document.getElementById('deleteModalBuyer');
-
-    namePlaceholder.textContent = buyerName;
-
-    form.action = `/sales/${saleId}`;
-
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    document.body.classList.add('overflow-hidden');
-}
-
-function closeDeleteModal() {
-    const modal = document.getElementById('deleteConfirmationModal');
-
-    modal.classList.remove('flex');
-    modal.classList.add('hidden');
-    document.body.classList.remove('overflow-hidden');
-}
-
-window.onclick = function(event) {
-    const deleteModal = document.getElementById('deleteConfirmationModal');
-    const editModal = document.getElementById('editSaleModal'); 
-    
-    if (event.target === deleteModal) {
-        closeDeleteModal();
+    // MEMASUKKAN HARGA ACUAN KE INPUT UTAMA SAAT TOMBOL DIKLIK
+    function applyEditPrice(type) {
+        const retailText = document.getElementById('edit-sale-reference-retail');
+        const wholesaleText = document.getElementById('edit-sale-reference-wholesale');
+        const inputPrice = document.getElementById('edit_sale_price_per_kg');
+        
+        if (type === 'retail') {
+            const price = retailText.getAttribute('data-raw');
+            if(price) inputPrice.value = price;
+        } else if (type === 'wholesale') {
+            const price = wholesaleText.getAttribute('data-raw');
+            if(price) inputPrice.value = price;
+        }
     }
-}
+
+    // MENUTUP MODAL
+    function closeEditSaleModal() {
+        const modal = document.getElementById('editSaleModal');
+        modal.classList.remove('flex');
+        modal.classList.add('hidden');
+        document.body.classList.remove('overflow-hidden');
+    }
+
+    function triggerDeleteModal(saleId, buyerName) {
+        const modal = document.getElementById('deleteConfirmationModal');
+        const form = document.getElementById('deleteSaleForm');
+        const namePlaceholder = document.getElementById('deleteModalBuyer');
+
+        namePlaceholder.textContent = buyerName;
+
+        form.action = `/sales/${saleId}`;
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.classList.add('overflow-hidden');
+    }
+
+    function closeDeleteModal() {
+        const modal = document.getElementById('deleteConfirmationModal');
+
+        modal.classList.remove('flex');
+        modal.classList.add('hidden');
+        document.body.classList.remove('overflow-hidden');
+    }
+
+    window.onclick = function(event) {
+        const deleteModal = document.getElementById('deleteConfirmationModal');
+        const editModal = document.getElementById('editSaleModal'); 
+        
+        if (event.target === deleteModal) {
+            closeDeleteModal();
+        }
+    }
 </script>
 @endpush

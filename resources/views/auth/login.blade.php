@@ -51,22 +51,6 @@
                     Masuk Sekarang
                 </button>
             </form>
-
-            <div class="mt-8 p-5 bg-slate-50 rounded-2xl border border-slate-100">
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] mb-4 text-center">Akun Default</p>
-                <div class="space-y-3">
-                    <div class="p-4 bg-white rounded-xl border border-slate-100">
-                        <p class="text-xs font-black text-blue-600 uppercase tracking-widest mb-1">Owner</p>
-                        <p class="text-sm font-bold text-slate-700">Login: owner atau owner@aaseafood.com</p>
-                        <p class="text-sm font-bold text-slate-700">Password: owner123</p>
-                    </div>
-                    <div class="p-4 bg-white rounded-xl border border-slate-100">
-                        <p class="text-xs font-black text-emerald-600 uppercase tracking-widest mb-1">Admin Gudang</p>
-                        <p class="text-sm font-bold text-slate-700">Login: admin atau admin@aaseafood.com</p>
-                        <p class="text-sm font-bold text-slate-700">Password: admin123</p>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <div class="bg-gray-50 p-6 border-t border-gray-100 text-center">

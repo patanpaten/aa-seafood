@@ -6,6 +6,7 @@ use App\Models\IncomingStock;
 use App\Models\Supplier;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class IncomingStockController extends Controller
 {
@@ -38,48 +39,68 @@ class IncomingStockController extends Controller
         $validated = $request->validate([
             'date' => 'required|date',
             'supplier_id' => 'required|exists:suppliers,id',
-            'category_id' => 'required|exists:categories,id',
-            'purchase_price_per_kg' => 'required|numeric|min:0',
-            'receipt_weight' => 'required|numeric|min:0.01',
-            'actual_weight' => 'required|numeric|min:0.01',
+            'items' => 'required|array|min:1',
+            'items.*.category_id' => 'required|exists:categories,id',
+            'items.*.purchase_price_per_kg' => 'required|numeric|min:0',
+            'items.*.receipt_weight' => 'required|numeric|min:0.01',
+            'items.*.actual_weight' => 'required|numeric|min:0.01',
         ]);
 
-        // Hitung selisih berat
-        $shrinkage = $validated['receipt_weight'] - $validated['actual_weight'];
-        $totalPurchasePrice = $validated['actual_weight'] * $validated['purchase_price_per_kg'];
-        
-        // Cek jika selisih berat > 5% dari berat di nota
-        $threshold = $validated['receipt_weight'] * 0.05;
-        $status = ($shrinkage > $threshold) ? 'Warning/Loss' : 'Normal';
+        $totalPurchasePrice = 0;
+        $hasWarning = false;
+        $warnings = [];
 
-        IncomingStock::create([
-            'date' => $validated['date'],
-            'supplier_id' => $validated['supplier_id'],
-            'category_id' => $validated['category_id'],
-            'purchase_price_per_kg' => $validated['purchase_price_per_kg'],
-            'total_purchase_price' => $totalPurchasePrice,
-            'receipt_weight' => $validated['receipt_weight'],
-            'actual_weight' => $validated['actual_weight'],
-            'shrinkage_weight' => $shrinkage,
-            'status' => $status,
-        ]);
+        DB::transaction(function () use ($validated, &$totalPurchasePrice, &$hasWarning, &$warnings) {
+            foreach ($validated['items'] as $item) {
+                // Hitung selisih berat
+                $shrinkage = $item['receipt_weight'] - $item['actual_weight'];
+                $itemTotal = $item['actual_weight'] * $item['purchase_price_per_kg'];
+                $totalPurchasePrice += $itemTotal;
+                
+                // Cek jika selisih berat > 5% dari berat di nota
+                $threshold = $item['receipt_weight'] * 0.05;
+                $status = ($shrinkage > $threshold) ? 'Warning/Loss' : 'Normal';
+
+                if ($status === 'Warning/Loss') {
+                    $hasWarning = true;
+                    $categoryName = Category::find($item['category_id'])?->name ?? 'Barang';
+                    $warnings[] = "{$categoryName}: Selisih berat " . number_format($shrinkage, 2) . " kg (" . number_format(($shrinkage / $item['receipt_weight']) * 100, 1) . "%).";
+                }
+
+                IncomingStock::create([
+                    'date' => $validated['date'],
+                    'supplier_id' => $validated['supplier_id'],
+                    'category_id' => $item['category_id'],
+                    'purchase_price_per_kg' => $item['purchase_price_per_kg'],
+                    'total_purchase_price' => $itemTotal,
+                    'receipt_weight' => $item['receipt_weight'],
+                    'actual_weight' => $item['actual_weight'],
+                    'shrinkage_weight' => $shrinkage,
+                    'status' => $status,
+                ]);
+            }
+        });
 
         if ($request->expectsJson()) {
             return response()->json([
                 'message' => 'Barang masuk berhasil dicatat.',
                 'total_purchase_price' => number_format($totalPurchasePrice, 0, ',', '.'),
-                'warning' => $status === 'Warning/Loss'
-                    ? "Selisih berat barang ini mencapai " . number_format($shrinkage, 2) . " kg (" . number_format(($shrinkage / $validated['receipt_weight']) * 100, 1) . "%). Nilai ini melebihi batas aman 5%!"
-                    : null,
+                'warning' => $hasWarning ? implode(' ', $warnings) : null,
             ], 201);
         }
 
-        if ($status === 'Warning/Loss') {
+        if ($hasWarning) {
             return redirect()->route('incoming-stocks.create')
                 ->with('success', 'Barang masuk berhasil dicatat.')
-                ->with('warning', "Selisih berat barang ini mencapai " . number_format($shrinkage, 2) . " kg (" . number_format(($shrinkage / $validated['receipt_weight']) * 100, 1) . "%). Nilai ini melebihi batas aman 5%!");
+                ->with('warning', implode(' ', $warnings));
         }
 
         return redirect()->route('incoming-stocks.create')->with('success', "Barang masuk berhasil dicatat.");
+    }
+
+    public function destroy(IncomingStock $incomingStock)
+    {
+        $incomingStock->delete();
+        return redirect()->back()->with('success', "Transaksi stok masuk berhasil dihapus.");
     }
 }

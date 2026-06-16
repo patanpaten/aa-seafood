@@ -49,7 +49,6 @@
                 <form id="sale-form" action="{{ route('sales.store') }}" method="POST" class="space-y-8">
                     @csrf
                     <input type="hidden" name="partner_id" id="sale_partner_id">
-                    <input type="hidden" name="price_type" id="sale_price_type" value="eceran">
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div id="sale-buyer-name-wrapper" class="hidden md:col-span-2 group">
@@ -73,57 +72,17 @@
                                     class="w-full pl-12 pr-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition font-semibold text-slate-700" required>
                             </div>
                         </div>
-
-                        <div class="group">
-                            <label for="sale_category_id" class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1 transition-colors group-focus-within:text-emerald-600">Nama Barang</label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-emerald-600 transition-colors">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
-                                </div>
-                                <select name="category_id" id="sale_category_id"
-                                    class="w-full pl-12 pr-10 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition font-semibold text-slate-700 appearance-none cursor-pointer" required>
-                                    <option value="">Pilih Barang</option>
-                                    @foreach($groupedCategories as $groupName => $groupCategories)
-                                        <optgroup label="{{ $groupName }}">
-                                            @foreach($groupCategories as $category)
-                                                <option value="{{ $category->id }}"
-                                                    data-retail-price="{{ $category->retail_price }}"
-                                                    data-wholesale-price="{{ $category->wholesale_price }}">
-                                                    {{ $category->name }}
-                                                </option>
-                                            @endforeach
-                                        </optgroup>
-                                    @endforeach
-                                </select>
-                                <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-slate-400">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div class="group">
-                            <label for="sale_quantity_sold_kg" class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1 transition-colors group-focus-within:text-emerald-600">Jumlah Jual (Kg)</label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-emerald-600 transition-colors">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"></path></svg>
-                                </div>
-                                <input type="number" step="0.01" min="0.01" name="quantity_sold_kg" id="sale_quantity_sold_kg" placeholder="0.00"
-                                    class="w-full pl-12 pr-5 py-5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition font-black text-2xl text-slate-700 placeholder:text-slate-200" required>
-                            </div>
+                    <div class="border-t border-slate-100 pt-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-sm font-extrabold text-slate-700 uppercase tracking-widest">Daftar Barang</h3>
+                            <button type="button" onclick="addSaleItem()" class="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                Tambah Barang
+                            </button>
                         </div>
-
-                        <div class="group">
-                            <label for="sale_price_per_kg" class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1 transition-colors group-focus-within:text-amber-600">Harga Jual Per Kg</label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
-                                    <span class="text-lg font-black text-slate-300 group-focus-within:text-amber-400 transition-colors">Rp</span>
-                                </div>
-                                <input type="number" step="0.01" min="0" name="price_per_kg" id="sale_price_per_kg" placeholder="0"
-                                    class="w-full pl-16 pr-5 py-5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 outline-none transition font-black text-2xl text-slate-700 placeholder:text-slate-200" required>
-                            </div>
-                        </div>
+                        <div id="sale-items-container" class="space-y-4"></div>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-dashed border-slate-200 pt-6">
@@ -150,44 +109,16 @@
                             </div>
                         </div>
                     </div>
-                    <div id="sale-price-type-card" class="hidden p-8 bg-slate-900 rounded-[2.5rem] shadow-xl shadow-slate-200 relative overflow-hidden group">
-                        <div class="absolute top-0 right-0 -mt-12 -mr-12 w-48 h-48 bg-white/5 rounded-full transition-transform group-hover:scale-150 duration-1000"></div>
-                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 relative z-10 mb-8">
-                            <div class="flex items-center gap-4">
-                                <div class="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-white">
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                </div>
-                                <div>
-                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">Harga Acuan Barang</p>
-                                    <p id="sale-price-source-label" class="text-base font-extrabold text-white"></p>
-                                </div>
-                            </div>
-                        </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 relative z-10">
-                            <div class="p-5 rounded-3xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors group/item">
-                                <div class="flex justify-between items-start mb-4">
-                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Harga Eceran</p>
-                                    <div class="w-8 h-8 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
-                                    </div>
-                                </div>
-                                <p id="sale-reference-retail" class="text-2xl font-black text-white mb-4">Rp 0</p>
-                                <button type="button" id="sale-apply-retail-price" class="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-[0.2em] transition-all transform active:scale-95">
-                                    Gunakan Harga
-                                </button>
+                    <div class="p-6 bg-emerald-600 rounded-[2.5rem] shadow-xl shadow-emerald-200 relative overflow-hidden group">
+                        <div class="absolute top-0 right-0 -mt-8 -mr-8 w-32 h-32 bg-white/5 rounded-full transition-transform group-hover:scale-150 duration-700"></div>
+                        <div class="flex items-center justify-between relative z-10">
+                            <div>
+                                <p class="text-[10px] font-bold text-emerald-100 uppercase tracking-widest mb-1">Estimasi Total Penjualan</p>
+                                <p id="sale-total-price" class="text-3xl font-black text-white tracking-tight">Rp 0</p>
                             </div>
-                            <div class="p-5 rounded-3xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors group/item">
-                                <div class="flex justify-between items-start mb-4">
-                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Harga Grosir</p>
-                                    <div class="w-8 h-8 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-400">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
-                                    </div>
-                                </div>
-                                <p id="sale-reference-wholesale" class="text-2xl font-black text-white mb-4">Rp 0</p>
-                                <button type="button" id="sale-apply-wholesale-price" class="w-full py-3 rounded-2xl bg-amber-600 hover:bg-amber-500 text-white text-[10px] font-black uppercase tracking-[0.2em] transition-all transform active:scale-95">
-                                    Gunakan Harga
-                                </button>
+                            <div class="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-white/50">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
                             </div>
                         </div>
                     </div>

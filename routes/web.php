@@ -54,16 +54,18 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('incoming-stocks')->name('incoming-stocks.')->group(function () {
         Route::get('/create', [IncomingStockController::class, 'create'])->name('create');
         Route::post('/', [IncomingStockController::class, 'store'])->name('store');
+        Route::delete('/{incomingStock}', [IncomingStockController::class, 'destroy'])->name('destroy');
     });
 
     // 2. Sales / Penjualan
-    Route::prefix('sales')->name('sales.')->group(function () {
-        Route::get('/create', [SaleController::class, 'create'])->name('create');
-        Route::post('/', [SaleController::class, 'store'])->name('store');
-        Route::patch('/{sale}/update-status', [SaleController::class, 'updateStatus'])->name('update-status');
-        Route::patch('/{sale}', [SaleController::class, 'update'])->name('update');
-        Route::delete('/{sale}', [SaleController::class, 'destroy'])->name('destroy');
-    });
+        Route::prefix('sales')->name('sales.')->group(function () {
+            Route::get('/create', [SaleController::class, 'create'])->name('create');
+            Route::post('/', [SaleController::class, 'store'])->name('store');
+            Route::patch('/{sale}/update-status', [SaleController::class, 'updateStatus'])->name('update-status');
+            Route::patch('/{sale}', [SaleController::class, 'update'])->name('update');
+            Route::delete('/{sale}', [SaleController::class, 'destroy'])->name('destroy');
+            Route::post('/bulk-delivery', [SaleController::class, 'bulkDelivery'])->name('bulk-delivery');
+        });
 
 
     // ==========================================

@@ -155,7 +155,7 @@
     <div id="incoming-stock-modal" class="hidden fixed inset-0 z-[110]">
         <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300" data-close-incoming-stock-modal></div>
         <div class="relative flex min-h-full items-center justify-center p-4">
-            <div class="w-full max-w-lg max-h-[90vh] bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-y-auto custom-scrollbar transform transition-all duration-300 scale-100">
+            <div class="w-full max-w-3xl max-h-[90vh] bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-y-auto custom-scrollbar transform transition-all duration-300 scale-100">
                 <div class="p-8 sm:p-10">
                     <div class="flex items-start justify-between gap-4 mb-8">
                         <div class="flex items-center gap-4">
@@ -175,7 +175,7 @@
                     <div class="p-6 bg-slate-50 rounded-[2.5rem] border border-slate-100 mb-8 relative overflow-hidden group">
                         <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-blue-500/5 rounded-full transition-transform group-hover:scale-150 duration-700"></div>
                         <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] mb-5 relative z-10">Data Supplier Terpilih</p>
-                        <div class="grid grid-cols-1 gap-4 relative z-10">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 relative z-10">
                             <div class="flex items-start gap-4 p-3 bg-white rounded-2xl border border-slate-100 shadow-sm">
                                 <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 shrink-0">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
@@ -212,7 +212,7 @@
                         @csrf
                         <input type="hidden" name="supplier_id" id="incoming_supplier_id">
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <div class="grid grid-cols-1 gap-5">
                             <div class="group">
                                 <label for="incoming_date" class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1 transition-colors group-focus-within:text-blue-600">Tanggal Masuk</label>
                                 <div class="relative">
@@ -223,53 +223,17 @@
                                         class="w-full pl-12 pr-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition font-semibold text-slate-700" required>
                                 </div>
                             </div>
-
-                            <div class="group">
-                                <label for="incoming_category_id" class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1 transition-colors group-focus-within:text-blue-600">Nama Barang</label>
-                                <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600 transition-colors">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
-                                    </div>
-                                    <select name="category_id" id="incoming_category_id"
-                                        class="w-full pl-12 pr-10 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition font-semibold text-slate-700 appearance-none cursor-pointer" required>
-                                        <option value="">Pilih Barang</option>
-                                        @foreach($groupedCategories as $groupName => $groupCategories)
-                                            <optgroup label="{{ $groupName }}">
-                                                @foreach($groupCategories as $category)
-                                                    <option value="{{ $category->id }}">{{ $category->name }}</option>
-                                                @endforeach
-                                            </optgroup>
-                                        @endforeach
-                                    </select>
-                                    <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-slate-400">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
 
-                        <div class="group">
-                            <label for="incoming_purchase_price_per_kg" class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1 transition-colors group-focus-within:text-blue-600">Harga Beli Per Kg</label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
-                                    <span class="text-lg font-black text-slate-300 group-focus-within:text-blue-400 transition-colors">Rp</span>
-                                </div>
-                                <input type="number" step="0.01" min="0" name="purchase_price_per_kg" id="incoming_purchase_price_per_kg" placeholder="0"
-                                    class="w-full pl-16 pr-5 py-5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition font-black text-2xl text-slate-700 placeholder:text-slate-200" required>
+                        <div class="border-t border-slate-100 pt-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-sm font-extrabold text-slate-700 uppercase tracking-widest">Daftar Barang</h3>
+                                <button type="button" onclick="addItem()" class="inline-flex items-center gap-2 text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                    Tambah Barang
+                                </button>
                             </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 p-6 bg-blue-50/50 rounded-[2.5rem] border border-blue-100/50">
-                            <div class="group">
-                                <label for="incoming_receipt_weight" class="block text-[10px] font-black text-blue-400 uppercase tracking-widest mb-2 ml-1">Berat Di Nota (Kg)</label>
-                                <input type="number" step="0.01" min="0.01" name="receipt_weight" id="incoming_receipt_weight" placeholder="0.00"
-                                    class="w-full px-5 py-4 bg-white border border-blue-100 rounded-2xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition font-black text-xl text-blue-600 placeholder:text-blue-200" required>
-                            </div>
-                            <div class="group">
-                                <label for="incoming_actual_weight" class="block text-[10px] font-black text-blue-400 uppercase tracking-widest mb-2 ml-1">Hasil Timbang (Kg)</label>
-                                <input type="number" step="0.01" min="0.01" name="actual_weight" id="incoming_actual_weight" placeholder="0.00"
-                                    class="w-full px-5 py-4 bg-white border border-blue-100 rounded-2xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition font-black text-xl text-blue-600 placeholder:text-blue-200" required>
-                            </div>
+                            <div id="items-container" class="space-y-4"></div>
                         </div>
 
                         <div class="p-6 bg-slate-900 rounded-[2.5rem] shadow-xl shadow-slate-200 relative overflow-hidden group">
@@ -374,6 +338,8 @@
 
 @push('scripts')
 <script>
+    const categories = @json($groupedCategories);
+
     // FUNGSI UNTUK MODAL EDIT SUPPLIER (BARU)
     function openEditSupplierModal(id, name, contact, address) {
         document.getElementById('edit_supplier_id').value = id;
@@ -486,7 +452,7 @@
                     "X-CSRF-TOKEN": "{{ csrf_token() }}",
                     "Accept": "application/json"
                 },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     name: nameInput,
                     contact: contactInput,
                     address: addressInput
@@ -496,7 +462,6 @@
             const data = await response.json();
 
             if (!response.ok) {
-                // Tampilkan error validasi dari laravel
                 const errMsg = data.errors ? Object.values(data.errors)[0][0] : (data.message || 'Gagal menyimpan.');
                 errorBox.innerHTML = errMsg;
                 errorBox.classList.remove('hidden');
@@ -505,10 +470,7 @@
                 return;
             }
 
-            // Jika berhasil, refresh halaman agar data masuk ke dalam tabel
-            // Kita refresh karena UI Anda berbentuk list tabel (bukan dropdown)
             window.location.reload();
-
         } catch (error) {
             errorBox.innerHTML = 'Terjadi kesalahan jaringan.';
             errorBox.classList.remove('hidden');
@@ -517,128 +479,165 @@
         }
     }
 
-
-    // FUNGSI UNTUK MODAL STOK MASUK (BAWAAN ANDA)
-    document.addEventListener('DOMContentLoaded', function () {
-        const modal = document.getElementById('incoming-stock-modal');
-        const form = document.getElementById('incoming-stock-form');
-        const feedback = document.getElementById('incoming-stock-feedback');
-        const errorsBox = document.getElementById('incoming-stock-errors');
-        const submitButton = document.getElementById('incoming-stock-submit-button');
-        const supplierIdInput = document.getElementById('incoming_supplier_id');
-        const selectedName = document.getElementById('incoming-selected-supplier-name');
-        const selectedContact = document.getElementById('incoming-selected-supplier-contact');
-        const selectedAddress = document.getElementById('incoming-selected-supplier-address');
-        const purchasePriceInput = document.getElementById('incoming_purchase_price_per_kg');
-        const actualWeightInput = document.getElementById('incoming_actual_weight');
-        const totalPurchasePrice = document.getElementById('incoming-total-purchase-price');
-
-        function showFeedback(message, type) {
-            feedback.className = 'rounded-2xl border px-5 py-4 text-sm font-semibold mb-6';
-            if (type === 'warning') {
-                feedback.classList.add('bg-amber-50', 'border-amber-100', 'text-amber-700');
-            } else {
-                feedback.classList.add('bg-emerald-50', 'border-emerald-100', 'text-emerald-700');
-            }
-            feedback.textContent = message;
-            feedback.classList.remove('hidden');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        function showErrors(errors) {
-            const items = Object.values(errors).flat();
-            errorsBox.innerHTML = '<ul class="list-disc list-inside space-y-1">' + items.map(item => '<li>' + item + '</li>').join('') + '</ul>';
-            errorsBox.classList.remove('hidden');
-        }
-
-        function resetErrors() {
-            errorsBox.classList.add('hidden');
-            errorsBox.innerHTML = '';
-        }
-
-        function updateTotalPurchasePrice() {
-            const price = parseFloat(purchasePriceInput.value || 0);
-            const weight = parseFloat(actualWeightInput.value || 0);
-            const total = price * weight;
-
-            totalPurchasePrice.textContent = 'Rp ' + new Intl.NumberFormat('id-ID').format(total);
-        }
-
-        function openModal(button) {
-            supplierIdInput.value = button.dataset.supplierId;
-            selectedName.textContent = button.dataset.supplierName || '-';
-            selectedContact.textContent = button.dataset.supplierContact || '-';
-            selectedAddress.textContent = button.dataset.supplierAddress || '-';
-            updateTotalPurchasePrice();
-            modal.classList.remove('hidden');
+    // FUNGSI UNTUK MODAL INCOMING STOCK
+    document.querySelectorAll('.open-incoming-stock-modal').forEach(button => {
+        button.addEventListener('click', () => {
+            document.getElementById('incoming_supplier_id').value = button.dataset.supplierId;
+            document.getElementById('incoming-selected-supplier-name').textContent = button.dataset.supplierName;
+            document.getElementById('incoming-selected-supplier-contact').textContent = button.dataset.supplierContact || '-';
+            document.getElementById('incoming-selected-supplier-address').textContent = button.dataset.supplierAddress || '-';
+            
+            document.getElementById('incoming-stock-modal').classList.remove('hidden');
             document.body.classList.add('overflow-hidden');
-        }
+            
+            // Reset form and add first item
+            document.getElementById('incoming-stock-form').reset();
+            document.getElementById('incoming_supplier_id').value = button.dataset.supplierId;
+            document.getElementById('items-container').innerHTML = '';
+            document.getElementById('incoming-stock-errors').classList.add('hidden');
+            addItem();
+        });
+    });
 
-        function closeModal() {
-            modal.classList.add('hidden');
+    document.querySelectorAll('[data-close-incoming-stock-modal]').forEach(el => {
+        el.addEventListener('click', () => {
+            document.getElementById('incoming-stock-modal').classList.add('hidden');
             document.body.classList.remove('overflow-hidden');
-            form.reset();
-            document.getElementById('incoming_date').value = '{{ date('Y-m-d') }}';
-            supplierIdInput.value = '';
-            selectedName.textContent = '-';
-            selectedContact.textContent = '-';
-            selectedAddress.textContent = '-';
-            totalPurchasePrice.textContent = 'Rp 0';
-            resetErrors();
-        }
+        });
+    });
 
-        document.querySelectorAll('.open-incoming-stock-modal').forEach((button) => {
-            button.addEventListener('click', function () {
-                openModal(this);
+    function getCategoryOptions() {
+        let html = '<option value="">Pilih Barang</option>';
+        for (let group in categories) {
+            html += `<optgroup label="${group}">`;
+            categories[group].forEach(cat => {
+                html += `<option value="${cat.id}">${cat.name}</option>`;
             });
+            html += '</optgroup>';
+        }
+        return html;
+    }
+
+    let itemIndex = 0;
+    function addItem() {
+        const container = document.getElementById('items-container');
+        const index = itemIndex++;
+        const html = `
+            <div class="item-row bg-slate-50 border border-slate-200 rounded-2xl p-5">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Barang #${index + 1}</span>
+                    <button type="button" onclick="removeItem(this)" class="text-rose-400 hover:text-rose-600 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="sm:col-span-2 lg:col-span-1">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Nama Barang</label>
+                        <select name="items[${index}][category_id]" required onchange="updateTotal()"
+                            class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition font-semibold text-slate-700">
+                            ${getCategoryOptions()}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Harga/Kg</label>
+                        <input type="number" step="0.01" min="0" name="items[${index}][purchase_price_per_kg]" required oninput="updateTotal()" placeholder="0"
+                            class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition font-semibold text-slate-700">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-2 ml-1">Berat Nota (Kg)</label>
+                        <input type="number" step="0.01" min="0.01" name="items[${index}][receipt_weight]" required oninput="updateTotal()" placeholder="0.00"
+                            class="w-full px-4 py-3 bg-white border border-blue-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition font-semibold text-blue-700">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-2 ml-1">Berat Aktual (Kg)</label>
+                        <input type="number" step="0.01" min="0.01" name="items[${index}][actual_weight]" required oninput="updateTotal()" placeholder="0.00"
+                            class="w-full px-4 py-3 bg-white border border-blue-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition font-semibold text-blue-700">
+                    </div>
+                </div>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', html);
+        updateTotal();
+    }
+
+    function removeItem(btn) {
+        btn.closest('.item-row').remove();
+        updateTotal();
+    }
+
+    function formatRupiah(number) {
+        return 'Rp ' + number.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    }
+
+    function updateTotal() {
+        let total = 0;
+        const items = document.querySelectorAll('.item-row');
+        items.forEach(item => {
+            const price = parseFloat(item.querySelector('[name*="purchase_price_per_kg"]').value) || 0;
+            const weight = parseFloat(item.querySelector('[name*="actual_weight"]').value) || 0;
+            total += price * weight;
         });
+        document.getElementById('incoming-total-purchase-price').textContent = formatRupiah(total);
+    }
 
-        document.querySelectorAll('[data-close-incoming-stock-modal]').forEach((button) => {
-            button.addEventListener('click', closeModal);
-        });
+    // Handle form submission for incoming stock
+    document.getElementById('incoming-stock-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const form = e.target;
+        const btnSubmit = document.getElementById('incoming-stock-submit-button');
+        const errorBox = document.getElementById('incoming-stock-errors');
+        
+        btnSubmit.disabled = true;
+        btnSubmit.textContent = 'Menyimpan...';
+        errorBox.classList.add('hidden');
 
-        purchasePriceInput.addEventListener('input', updateTotalPurchasePrice);
-        actualWeightInput.addEventListener('input', updateTotalPurchasePrice);
+        try {
+            const formData = new FormData(form);
+            const response = await fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': "{{ csrf_token() }}",
+                    'Accept': 'application/json'
+                },
+                body: formData
+            });
 
-        form.addEventListener('submit', async function (event) {
-            event.preventDefault();
-            resetErrors();
-            submitButton.disabled = true;
-            submitButton.textContent = 'Menyimpan...';
+            const data = await response.json();
 
-            try {
-                const response = await fetch(form.action, {
-                    method: 'POST',
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                    body: new FormData(form),
-                });
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                    if (data.errors) {
-                        showErrors(data.errors);
-                    } else {
-                        showErrors({ general: [data.message || 'Terjadi kesalahan saat menyimpan data.'] });
-                    }
-                    return;
+            if (!response.ok) {
+                let errMsg = 'Gagal menyimpan.';
+                if (data.errors) {
+                    errMsg = Object.values(data.errors).flat().join('<br>');
+                } else if (data.message) {
+                    errMsg = data.message;
                 }
-
-                closeModal();
-                const successMessage = data.total_purchase_price
-                    ? data.message + ' Total belanja: Rp ' + data.total_purchase_price
-                    : data.message;
-                showFeedback(data.warning || successMessage, data.warning ? 'warning' : 'success');
-            } catch (error) {
-                showErrors({ general: ['Koneksi ke server gagal. Silakan coba lagi.'] });
-            } finally {
-                submitButton.disabled = false;
-                submitButton.textContent = 'Simpan Barang Masuk';
+                errorBox.innerHTML = errMsg;
+                errorBox.classList.remove('hidden');
+                btnSubmit.disabled = false;
+                btnSubmit.textContent = 'Simpan Stok Masuk';
+                return;
             }
-        });
+
+            // Success! Show feedback and reload
+            const feedbackDiv = document.getElementById('incoming-stock-feedback');
+            feedbackDiv.innerHTML = data.message + (data.warning ? '<br><span class="text-orange-600">' + data.warning + '</span>' : '');
+            feedbackDiv.className = 'rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-sm font-semibold text-green-800';
+            feedbackDiv.classList.remove('hidden');
+
+            // Close modal and reload after short delay
+            document.getElementById('incoming-stock-modal').classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+            
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+
+        } catch (error) {
+            errorBox.innerHTML = 'Terjadi kesalahan jaringan.';
+            errorBox.classList.remove('hidden');
+            btnSubmit.disabled = false;
+            btnSubmit.textContent = 'Simpan Stok Masuk';
+        }
     });
 </script>
 @endpush

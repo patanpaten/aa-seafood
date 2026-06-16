@@ -21,7 +21,7 @@ class SupplierController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:suppliers,name',
+            'name' => 'required|string|max:255',
             'contact' => 'nullable|string|max:255',
             'address' => 'nullable|string',
         ]);
@@ -44,7 +44,7 @@ class SupplierController extends Controller
     public function update(Request $request, Supplier $supplier)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:suppliers,name,' . $supplier->id,
+            'name' => 'required|string|max:255,' . $supplier->id,
             'contact' => 'nullable|string|max:255',
             'address' => 'nullable|string',
         ]);

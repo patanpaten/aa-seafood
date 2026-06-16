@@ -37,60 +37,62 @@
     $waUrl = "https://wa.me/" . $cleanPhone . "?text=" . rawurlencode($pesan);
 @endphp
 
-<tr class="hover:bg-slate-50/50 transition-colors text-slate-600">
-    {{-- 1. Kolom Tanggal Nota --}}
-    <td class="px-4 py-3.5 font-medium">{{ \Carbon\Carbon::parse($sale->date)->format('d M Y') }}</td>
-    
-    {{-- 2. Kolom Tipe Seafood (Murni nama barang saja) --}}
+{{-- Kolom Tanggal Nota --}}
+<td class="px-4 py-3.5 font-medium">{{ \Carbon\Carbon::parse($sale->date)->format('d M Y') }}</td>
+
+{{-- Kolom Tipe Seafood / Nama Pembeli & Tipe --}}
+@if(isset($partner))
     <td class="px-4 py-3.5 font-bold text-slate-800">{{ $sale->category->name ?? '-' }}</td>
-    
-    {{-- 3. Kolom Pengantar / Kurir (Menjadi Satu Kolom Sendiri) --}}
-    <td class="px-4 py-3.5 text-slate-700">
-        @if($sale->driver_name)
-            <span class="font-bold text-slate-800">{{ $sale->driver_name }}</span>
-            @if($sale->driver_phone)
-                <div class="text-[11px] text-slate-400 font-normal tracking-wide mt-0.5">
-                    {{ $sale->driver_phone }}
-                </div>
-            @endif
-        @else
-            <span class="text-xs text-slate-400 italic font-normal">Belum diatur</span>
-        @endif
-    </td>
+@else
+    <td class="px-4 py-3.5 font-bold text-slate-800">{{ $sale->buyer_name ?? '-' }} • {{ $sale->category->name ?? '-' }}</td>
+@endif
 
-    {{-- 4. Kolom Quantity --}}
-    <td class="px-4 py-3.5 font-black text-emerald-600">{{ number_format($sale->quantity_sold_kg, 2) }} Kg</td>
-    
-    {{-- 5. Kolom Status --}}
-    <td class="px-4 py-3.5">
-        @if($sale->status === 'sedang diproses')
-            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-black bg-amber-50 text-amber-700 border border-amber-100 uppercase tracking-wider">
-                <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span> Diproses
-            </span>
-        @elseif($sale->status === 'dalam perjalanan')
-            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-black bg-blue-50 text-blue-700 border border-blue-100 uppercase tracking-wider">
-                <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span> Di Jalan
-            </span>
-        @else
-            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-black bg-emerald-50 text-emerald-700 border border-emerald-100 uppercase tracking-wider">
-                Selesai
-            </span>
+{{-- Kolom Pengantar / Kurir --}}
+<td class="px-4 py-3.5 text-slate-700">
+    @if($sale->driver_name)
+        <span class="font-bold text-slate-800">{{ $sale->driver_name }}</span>
+        @if($sale->driver_phone)
+            <div class="text-[11px] text-slate-400 font-normal tracking-wide mt-0.5">
+                {{ $sale->driver_phone }}
+            </div>
         @endif
-    </td>
+    @else
+        <span class="text-xs text-slate-400 italic font-normal">Belum diatur</span>
+    @endif
+</td>
 
-    {{-- 6. Kolom Bukti Pengiriman --}}
-    <td class="px-4 py-3.5">
-        @if($sale->delivery_proof)
-            <a href="{{ asset('storage/delivery_proofs/' . $sale->delivery_proof) }}" target="_blank" class="inline-block relative group">
-                <img src="{{ asset('storage/delivery_proofs/' . $sale->delivery_proof) }}" class="w-8 h-8 rounded-lg object-cover border border-slate-200 shadow-sm">
-            </a>
-        @else
-            <span class="text-xs text-slate-400 italic">Tidak ada</span>
-        @endif
-    </td>
+{{-- Kolom Quantity --}}
+<td class="px-4 py-3.5 font-black text-emerald-600">{{ number_format($sale->quantity_sold_kg, 2) }} Kg</td>
 
-    {{-- 7. Kolom Aksi / Tombol Kontrol Owner --}}
-    {{-- 7. Kolom Aksi / Tombol Kontrol Owner --}}
+{{-- Kolom Status --}}
+<td class="px-4 py-3.5">
+    @if($sale->status === 'sedang diproses')
+        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-black bg-amber-50 text-amber-700 border border-amber-100 uppercase tracking-wider">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span> Diproses
+        </span>
+    @elseif($sale->status === 'dalam perjalanan')
+        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-black bg-blue-50 text-blue-700 border border-blue-100 uppercase tracking-wider">
+            <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span> Di Jalan
+        </span>
+    @else
+        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-black bg-emerald-50 text-emerald-700 border border-emerald-100 uppercase tracking-wider">
+            Selesai
+        </span>
+    @endif
+</td>
+
+{{-- Kolom Bukti Pengiriman --}}
+<td class="px-4 py-3.5">
+    @if($sale->delivery_proof)
+        <a href="{{ asset('storage/delivery_proofs/' . $sale->delivery_proof) }}" target="_blank" class="inline-block relative group">
+            <img src="{{ asset('storage/delivery_proofs/' . $sale->delivery_proof) }}" class="w-8 h-8 rounded-lg object-cover border border-slate-200 shadow-sm">
+        </a>
+    @else
+        <span class="text-xs text-slate-400 italic">Tidak ada</span>
+    @endif
+</td>
+
+{{-- Kolom Aksi --}}
 <td class="px-4 py-3.5 text-center">
     <div class="flex items-center justify-center gap-2" onclick="event.stopPropagation();">
         
@@ -115,14 +117,14 @@
             </button>
 
             {{-- Tombol Hapus Data Kustom --}}
-<button type="button" 
-        onclick="triggerDeleteModal({{ $sale->id }}, '{{ addslashes($partner->name ?? $sale->buyer_name) }}')" 
-        class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors" 
-        title="Hapus Penjualan">
-    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-    </svg>
-</button>
+            <button type="button" 
+                    onclick="triggerDeleteModal({{ $sale->id }}, '{{ addslashes($partner->name ?? $sale->buyer_name) }}')" 
+                    class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors" 
+                    title="Hapus Penjualan">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.895-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                </svg>
+            </button>
         @endif
 
         {{-- Tombol Kirim WA Notifikasi Kurir --}}
@@ -164,15 +166,13 @@
         @endif
     </div>
 </td>
-</tr>
 
-
-
+{{-- Modal Hapus Konfirmasi --}}
 <div id="deleteConfirmationModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 transition-all">
     <div class="bg-white rounded-2xl max-w-md w-full shadow-xl border border-slate-100 p-6 transform transition-all scale-95 duration-200">
         <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600 mb-4">
             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
             </svg>
         </div>
         

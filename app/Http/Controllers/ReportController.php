@@ -21,7 +21,8 @@ class ReportController extends Controller
         $endDate = $request->input('end_date', Carbon::now()->toDateString());
         
         $selectedGroup = $request->input('group');
-        $selectedCategory = $request->input('category_id'); // BARU: Tangkap input barang
+        $selectedCategory = $request->input('category_id');
+        $selectedType = $request->input('type'); // New: Filter type
         
         $normalizedGroup = $this->normalizeGroup($selectedGroup);
         
@@ -33,14 +34,11 @@ class ReportController extends Controller
             ->sort()
             ->values();
 
-        // BARU: Ambil semua data barang untuk dropdown filter
         $categoriesList = Category::orderBy('name')->get();
 
-        // BARU: Passing selectedCategory ke fungsi agregat
-        $reportData = $this->getAggregatedData($startDate, $endDate, $normalizedGroup, $selectedCategory);
+        $reportData = $this->getAggregatedData($startDate, $endDate, $normalizedGroup, $selectedCategory, $selectedType);
 
-        // BARU: Tambahkan categoriesList dan selectedCategory ke view (compact)
-        return view('reports.index', compact('reportData', 'startDate', 'endDate', 'categoryGroups', 'selectedGroup', 'categoriesList', 'selectedCategory'));
+        return view('reports.index', compact('reportData', 'startDate', 'endDate', 'categoryGroups', 'selectedGroup', 'categoriesList', 'selectedCategory', 'selectedType'));
     }
 
     /**
@@ -52,19 +50,20 @@ class ReportController extends Controller
         $endDate = $request->input('end_date');
         
         $selectedGroup = $request->input('group');
-        $selectedCategory = $request->input('category_id'); // BARU
+        $selectedCategory = $request->input('category_id');
+        $selectedType = $request->input('type');
         
         $normalizedGroup = $this->normalizeGroup($selectedGroup);
 
-        // BARU: Passing selectedCategory ke fungsi agregat
-        $reportData = $this->getAggregatedData($startDate, $endDate, $normalizedGroup, $selectedCategory);
+        $reportData = $this->getAggregatedData($startDate, $endDate, $normalizedGroup, $selectedCategory, $selectedType);
         
         $pdf = Pdf::loadView('reports.pdf', [
             'reportData' => $reportData,
             'startDate' => $startDate,
             'endDate' => $endDate,
             'selectedGroup' => $selectedGroup,
-            'selectedCategory' => $selectedCategory, // BARU
+            'selectedCategory' => $selectedCategory,
+            'selectedType' => $selectedType,
             'generatedAt' => Carbon::now()->format('d/m/Y H:i')
         ]);
 
@@ -74,45 +73,33 @@ class ReportController extends Controller
     /**
      * Helper to aggregate stock and sales data.
      */
-    private function getAggregatedData($startDate, $endDate, ?string $selectedGroup = null, ?string $selectedCategory = null) // BARU: Tambah parameter selectedCategory
+    private function getAggregatedData($startDate, $endDate, ?string $selectedGroup = null, ?string $selectedCategory = null, ?string $selectedType = null)
     {
-        // BARU: Ambil ID kategori dengan mengecek filter grup DAN/ATAU filter barang
         $categoryIds = Category::query()
             ->when($selectedGroup, fn ($query) => $query->whereRaw('LOWER(TRIM(group_name)) = ?', [$selectedGroup]))
-            ->when($selectedCategory, fn ($query) => $query->where('id', $selectedCategory)) // Filter barang spesifik
+            ->when($selectedCategory, fn ($query) => $query->where('id', $selectedCategory))
             ->pluck('id');
 
-        // BARU: Query diperbarui untuk selalu memakai whereIn category_id
         $incomingQuery = IncomingStock::query()
             ->with(['supplier', 'category'])
             ->whereBetween('date', [$startDate, $endDate])
             ->whereIn('category_id', $categoryIds);
 
-        // BARU: Query diperbarui untuk selalu memakai whereIn category_id
         $salesQuery = Sale::query()
             ->with(['partner', 'category'])
             ->whereBetween('date', [$startDate, $endDate])
             ->whereIn('category_id', $categoryIds);
 
-        // 1. Total Incoming Seafood (kg)
-        $totalIncoming = (clone $incomingQuery)
-            ->sum('actual_weight');
-
-        // 2. Total Shrinkage / Drip Loss (kg)
-        $totalShrinkage = (clone $incomingQuery)
-            ->sum('shrinkage_weight');
-
-        // 3. Total Purchase Cost
+        $totalIncoming = (clone $incomingQuery)->sum('actual_weight');
+        $totalShrinkage = (clone $incomingQuery)->sum('shrinkage_weight');
         $totalPurchaseCost = (clone $incomingQuery)->sum('total_purchase_price');
 
-        // 4. Total Sales (kg & Revenue)
         $totalSalesKg = (clone $salesQuery)->sum('quantity_sold_kg');
         $totalRevenue = (clone $salesQuery)->sum('total_price');
         $grossProfit = $totalRevenue - $totalPurchaseCost;
 
-        // 5. Current Available Stock
         $categories = Category::query()
-            ->whereIn('id', $categoryIds) // BARU: sesuaikan pencarian stok sesuai yang terfilter
+            ->whereIn('id', $categoryIds)
             ->orderBy('name')
             ->get();
         $currentStock = $categories->sum(fn ($cat) => $cat->current_stock);
@@ -170,6 +157,7 @@ class ReportController extends Controller
                     'sort_date' => Carbon::createFromFormat('d/m/Y', $item['date'])->format('Y-m-d'),
                 ];
             })
+            ->when($selectedType !== 'penjualan', fn ($col) => $col) // Filter out incoming if type is penjualan
             ->merge(collect($salesDetails)->map(function ($item) {
                 return [
                     'date' => $item['date'],
@@ -183,19 +171,16 @@ class ReportController extends Controller
                     'total_price' => $item['total_price'],
                     'sort_date' => Carbon::createFromFormat('d/m/Y', $item['date'])->format('Y-m-d'),
                 ];
-            }))
+            })->when($selectedType !== 'masuk', fn ($col) => $col)) // Filter out sales if type is masuk
             ->sortByDesc(fn ($item) => $item['sort_date'] . '|' . $item['type'])
             ->values()
             ->map(function ($item) {
                 unset($item['sort_date']);
-
                 return $item;
             })
             ->all();
 
-        // Breakdown by Category
         $breakdown = [];
-
         foreach ($categories as $category) {
             $incoming = IncomingStock::where('category_id', $category->id)
                 ->whereBetween('date', [$startDate, $endDate])

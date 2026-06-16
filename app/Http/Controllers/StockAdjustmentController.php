@@ -37,9 +37,9 @@ class StockAdjustmentController extends Controller
             $adjBefore = \App\Models\StockAdjustment::where('category_id', $id);
 
             if ($startDate) {
-                $incomingBefore->where('created_at', '<', $startDate);
-                $salesBefore->where('created_at', '<', $startDate);
-                $adjBefore->where('created_at', '<', $startDate);
+                $incomingBefore->where('date', '<', $startDate);
+                $salesBefore->where('date', '<', $startDate);
+                $adjBefore->where('date', '<', $startDate);
             } else {
                 // Jika tidak ada filter tanggal, saldo awal adalah 0
                 $initialBalances[$id] = 0;
@@ -53,8 +53,8 @@ class StockAdjustmentController extends Controller
 
         // 3. Ambil detail transaksi stok masuk yang TERFILTER (Urutkan dari yang LAMA ke BARU untuk perhitungan rolling)
         $incomingStocksQuery = IncomingStock::with(['category', 'supplier']);
-        if ($startDate) $incomingStocksQuery->whereDate('created_at', '>=', $startDate);
-        if ($endDate) $incomingStocksQuery->whereDate('created_at', '<=', $endDate);
+        if ($startDate) $incomingStocksQuery->whereDate('date', '>=', $startDate);
+        if ($endDate) $incomingStocksQuery->whereDate('date', '<=', $endDate);
         if ($selectedSupplierId) $incomingStocksQuery->where('supplier_id', $selectedSupplierId);
         if ($selectedCategoryId) $incomingStocksQuery->where('category_id', $selectedCategoryId);
 
