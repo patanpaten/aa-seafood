@@ -129,12 +129,29 @@ class ReportController extends Controller
             ->orderByDesc('id')
             ->get()
             ->map(function ($sale) {
+                // OPSI 1: Cari harga beli terakhir untuk barang/kategori ini sebelum atau pada tanggal penjualan
+                $latestIncoming = IncomingStock::where('category_id', $sale->category_id)
+                    ->where('date', '<=', $sale->date)
+                    ->orderByDesc('date')
+                    ->orderByDesc('id')
+                    ->first();
+
+                // Jika tidak ada stok masuk di masa lalu sebelum tanggal penjualan, cari stok masuk pertama yang tersedia di sistem
+                if (!$latestIncoming) {
+                    $latestIncoming = IncomingStock::where('category_id', $sale->category_id)
+                        ->orderBy('date')
+                        ->first();
+                }
+
+                $purchasePrice = $latestIncoming ? (float) $latestIncoming->purchase_price_per_kg : null;
+
                 return [
                     'date' => optional($sale->date)->format('d/m/Y'),
                     'buyer_name' => $sale->display_buyer_name,
                     'group_name' => $sale->category?->display_group_name ?? '-',
                     'category_name' => $sale->category?->name ?? '-',
                     'quantity' => (float) $sale->quantity_sold_kg,
+                    'purchase_price_per_kg' => $purchasePrice, // <-- SEKARANG SUDAH BERISI DATA MODAL
                     'sale_price_per_kg' => (float) $sale->price_per_kg,
                     'total_price' => (float) $sale->total_price,
                 ];
@@ -152,12 +169,12 @@ class ReportController extends Controller
                     'category_name' => $item['category_name'],
                     'quantity' => $item['quantity'],
                     'purchase_price_per_kg' => $item['purchase_price_per_kg'],
-                    'sale_price_per_kg' => null,
+                    'sale_price_per_kg' => null, 
                     'total_price' => $item['total_purchase_price'],
                     'sort_date' => Carbon::createFromFormat('d/m/Y', $item['date'])->format('Y-m-d'),
                 ];
             })
-            ->when($selectedType !== 'penjualan', fn ($col) => $col) // Filter out incoming if type is penjualan
+            ->when($selectedType !== 'penjualan', fn ($col) => $col)
             ->merge(collect($salesDetails)->map(function ($item) {
                 return [
                     'date' => $item['date'],
@@ -166,12 +183,12 @@ class ReportController extends Controller
                     'group_name' => $item['group_name'],
                     'category_name' => $item['category_name'],
                     'quantity' => $item['quantity'],
-                    'purchase_price_per_kg' => null,
+                    'purchase_price_per_kg' => $item['purchase_price_per_kg'], // <-- Mengambil modal dari hasil pencarian di atas
                     'sale_price_per_kg' => $item['sale_price_per_kg'],
                     'total_price' => $item['total_price'],
                     'sort_date' => Carbon::createFromFormat('d/m/Y', $item['date'])->format('Y-m-d'),
                 ];
-            })->when($selectedType !== 'masuk', fn ($col) => $col)) // Filter out sales if type is masuk
+            })->when($selectedType !== 'masuk', fn ($col) => $col))
             ->sortByDesc(fn ($item) => $item['sort_date'] . '|' . $item['type'])
             ->values()
             ->map(function ($item) {

@@ -18,6 +18,9 @@
     @include('sales.edit-partner-modal')
 
     @include('sales.edit-sale-modal')
+
+    @include('sales.bulk-delivery-modal')
+    
 @endsection
 
 @push('scripts')
@@ -329,20 +332,61 @@
         }
     }
 
-    // FUNGSI UNTUK MODAL PENJUALAN DENGAN MULTI ITEM
-    let saleItemIndex = 0;
+// FUNGSI UNTUK MODAL PENJUALAN DENGAN MULTI ITEM
+let saleItemIndex = 0;
 
-    function getCategoryOptionsHtml() {
-        let html = '<option value="">Pilih Barang</option>';
-        for (let groupName in groupedCategories) {
-            html += `<optgroup label="${groupName}">`;
-            groupedCategories[groupName].forEach(cat => {
-                html += `<option value="${cat.id}" data-retail-price="${cat.retail_price}" data-wholesale-price="${cat.wholesale_price}">${cat.name}</option>`;
-            });
-            html += '</optgroup>';
+function getCategoryOptionsHtml() {
+    // 1. CEK GLOBAL: Apakah ada minimal satu barang yang punya stok?
+    let isAnyProductAvailable = false;
+    for (let groupName in groupedCategories) {
+        let hasStock = groupedCategories[groupName].some(cat => 
+            cat.current_stock !== null && cat.current_stock !== undefined && parseFloat(cat.current_stock) > 0
+        );
+        if (hasStock) {
+            isAnyProductAvailable = true;
+            break;
         }
-        return html;
     }
+
+    // 2. JIKA SEMUA STOK DI TOKO BENAR-BENAR HABIS (0)
+    if (!isAnyProductAvailable) {
+        return '<option value="" disabled selected>⚠️ STOK SEMUA BARANG HABIS</option>';
+    }
+
+    // 3. JIKA STOK AMAN, RENDER DROPDOWN SEPERTI BIASA
+    let html = '<option value="">Pilih Barang</option>';
+    
+    for (let groupName in groupedCategories) {
+        let categories = groupedCategories[groupName];
+        
+        // Cek apakah di dalam grup ini ada barang yang ready
+        let hasAvailableItems = categories.some(cat => 
+            cat.current_stock !== null && cat.current_stock !== undefined && parseFloat(cat.current_stock) > 0
+        );
+        
+        // Jika isi grup habis semua, skip/jangan tampilkan nama grupnya
+        if (!hasAvailableItems) continue;
+
+        html += `<optgroup label="${groupName}">`;
+        
+        categories.forEach(cat => {
+            // Hanya tampilkan barang yang stoknya lebih dari 0
+            if (cat.current_stock !== null && cat.current_stock !== undefined && parseFloat(cat.current_stock) > 0) {
+                let stockInfo = parseFloat(cat.current_stock).toFixed(2);
+                
+                html += `<option value="${cat.id}" 
+                                 data-retail-price="${cat.retail_price}" 
+                                 data-wholesale-price="${cat.wholesale_price}"
+                                 data-stock="${cat.current_stock}">
+                            ${cat.name} (Stok: ${stockInfo} kg)
+                         </option>`;
+            }
+        });
+        
+        html += '</optgroup>';
+    }
+    return html;
+}
 
     function addSaleItem() {
         const container = document.getElementById('sale-items-container');
@@ -363,6 +407,14 @@
                             ${getCategoryOptionsHtml()}
                         </select>
                     </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Tipe Harga</label>
+                        <div class="flex gap-2">
+                            <button type="button" onclick="setSaleItemPriceType(this, 'retail')" class="flex-1 px-4 py-3 bg-white border-2 border-emerald-500 text-emerald-600 font-bold rounded-xl transition hover:bg-emerald-50 active-price-type" data-price-type="retail">Harga Biasa</button>
+                            <button type="button" onclick="setSaleItemPriceType(this, 'wholesale')" class="flex-1 px-4 py-3 bg-white border-2 border-slate-200 text-slate-500 font-bold rounded-xl transition hover:bg-slate-100" data-price-type="wholesale">Harga Banyak</button>
+                        </div>
+                        <input type="hidden" name="items[${index}][price_type]" value="eceran">
+                    </div>
                     <div>
                         <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Harga/Kg</label>
                         <input type="number" step="0.01" min="0" name="items[${index}][price_per_kg]" required oninput="updateSaleTotal()" placeholder="0"
@@ -380,14 +432,45 @@
         updateSaleTotal();
     }
 
-    function updateSaleItemPrice(select) {
-        const row = select.closest('.item-row');
+   function setSaleItemPriceType(btn, type) {
+        const row = btn.closest('.item-row');
+        const priceTypeInput = row.querySelector('input[name*="price_type"]');
+        const buttons = row.querySelectorAll('[data-price-type]');
+        const select = row.querySelector('select[name*="category_id"]');
+        
+        // Update button styling
+        buttons.forEach(b => {
+            b.classList.remove('border-emerald-500', 'text-emerald-600', 'bg-emerald-50', 'active-price-type');
+            b.classList.add('border-slate-200', 'text-slate-500');
+        });
+        btn.classList.add('border-emerald-500', 'text-emerald-600', 'bg-emerald-50', 'active-price-type');
+        
+        // Update price type input value (use eceran/grosir for backend)
+        priceTypeInput.value = type === 'retail' ? 'eceran' : 'grosir';
+        
+        // Update price (pass the select element)
+        updateSaleItemPrice(select);
+    }
+    
+    function updateSaleItemPrice(selectOrElement) {
+        const row = selectOrElement.closest('.item-row');
         const priceInput = row.querySelector('input[name*="price_per_kg"]');
+        const priceTypeInput = row.querySelector('input[name*="price_type"]');
+        const select = row.querySelector('select[name*="category_id"]');
+        
+        if (!select) return;
+        
         const selectedOption = select.options[select.selectedIndex];
         
         if (selectedOption && selectedOption.value !== "") {
-            const retailPrice = parseFloat(selectedOption.dataset.retailPrice || 0);
-            priceInput.value = retailPrice;
+            let price;
+            const backendPriceType = priceTypeInput.value;
+            if (backendPriceType === 'grosir') {
+                price = parseFloat(selectedOption.dataset.wholesalePrice || 0);
+            } else {
+                price = parseFloat(selectedOption.dataset.retailPrice || 0);
+            }
+            priceInput.value = price;
         }
         updateSaleTotal();
     }
@@ -697,5 +780,213 @@
             closeDeleteModal();
         }
     }
+
+
+
+
+// 1. Logika Check All Global (Paling Atas)
+function toggleSelectAllGlobal(masterCheckbox) {
+    const allSaleCheckboxes = document.querySelectorAll('.sale-checkbox');
+    const allPartnerCheckboxes = document.querySelectorAll('.partner-sale-checkbox');
+    
+    allSaleCheckboxes.forEach(cb => cb.checked = masterCheckbox.checked);
+    allPartnerCheckboxes.forEach(cb => cb.checked = masterCheckbox.checked);
+    
+    updateBulkButtonState();
+}
+
+// 2. Logika Check All berdasarkan grup Mitra/Restoran tertentu
+function toggleSelectAllPartner(partnerId, partnerMasterCheckbox) {
+    const partnerCheckboxes = document.querySelectorAll(`.partner-${partnerId}-sales`);
+    partnerCheckboxes.forEach(cb => cb.checked = partnerMasterCheckbox.checked);
+    
+    updateBulkButtonState();
+}
+
+// 3. Update Text & Keaktifan Tombol "Kirim yang Dipilih"
+function updateBulkButtonState() {
+    const checkedSales = document.querySelectorAll('.sale-checkbox:checked');
+    const bulkBtn = document.getElementById('bulk-delivery-btn');
+    const countSpan = document.getElementById('selected-count');
+    
+    countSpan.innerText = checkedSales.length;
+    
+    if (checkedSales.length > 0) {
+        bulkBtn.removeAttribute('disabled');
+    } else {
+        bulkBtn.setAttribute('disabled', 'disabled');
+        document.getElementById('select-all-sales').checked = false;
+    }
+}
+
+// Menampung data sementara agar bisa diakses antar-fungsi modal
+let globalSelectedIds = [];
+let globalPartnerContact = "";
+let globalPartnerName = "";
+let isMultiPartner = false; 
+let globalTaskDetailsText = ""; // Menampung list rincian pesanan untuk WA
+
+function bulkMarkAsDelivering() {
+    const checkedSales = document.querySelectorAll('.sale-checkbox:checked');
+    
+    globalSelectedIds = [];
+    globalPartnerContact = "";
+    globalPartnerName = "";
+    isMultiPartner = false;
+    globalTaskDetailsText = ""; 
+    
+    if (checkedSales.length === 0) return;
+
+    // Ambil nomor kontak & nama supir dari baris PERTAMA sebagai acuan dasar grup kurir
+    const firstContact = checkedSales[0].getAttribute('data-partner-contact') ? checkedSales[0].getAttribute('data-partner-contact').trim() : "";
+    const firstName = checkedSales[0].getAttribute('data-partner-name') || "Pengantar";
+
+    globalPartnerContact = firstContact;
+    globalPartnerName = firstName;
+
+    // Looping item terpilih untuk menyusun teks rincian tugas pengiriman
+    checkedSales.forEach((cb, index) => {
+        globalSelectedIds.push(cb.getAttribute('data-sale-id'));
+        
+        let currentContact = cb.getAttribute('data-partner-contact') ? cb.getAttribute('data-partner-contact').trim() : "";
+        if (currentContact !== firstContact) {
+            isMultiPartner = true;
+        }
+
+        // Ambil data manifest baris barang
+        let storeName = cb.getAttribute('data-store-name') || "-";
+        let itemName = cb.getAttribute('data-item-name') || "-";
+        let itemQty = cb.getAttribute('data-item-qty') || "-";
+        let proofLink = cb.getAttribute('data-proof-link') || "#";
+
+        // Susun per tugas pesanan dengan format template baru
+        globalTaskDetailsText += `Berikut tugas pengantaran pesanan:\n` +
+                                 `- Toko: ${storeName}\n` +
+                                 `- Barang: ${itemName} (${itemQty})\n\n` +
+                                 `Jika barang sudah sampai, mohon upload bukti pengiriman melalui tautan berikut ya:\n` +
+                                 `${proofLink}`;
+        
+        // Beri jeda baris pemisah antar tugas jika ada lebih dari satu nota pesanan yang dikirimkan bersamaan
+        if (index < checkedSales.length - 1) {
+            globalTaskDetailsText += `\n\n====================\n\n`;
+        }
+    });
+
+    document.getElementById('modal-selected-count').innerText = globalSelectedIds.length;
+
+    const modal = document.getElementById('bulkStatusModal');
+    modal.classList.remove('hidden');
+    document.body.classList.add('overflow-hidden');
+}
+
+function closeBulkModal() {
+    const modal = document.getElementById('bulkStatusModal');
+    modal.classList.add('hidden');
+    document.body.classList.remove('overflow-hidden');
+}
+
+function submitBulkStatus() {
+    if (globalSelectedIds.length === 0) return;
+
+    const selectedRadio = document.querySelector('input[name="modal_target_status"]:checked');
+    const statusResult = selectedRadio ? selectedRadio.value : 'dalam perjalanan';
+
+    const submitBtn = document.getElementById('modal-submit-btn');
+    submitBtn.setAttribute('disabled', 'disabled');
+    submitBtn.innerText = "Memproses...";
+
+    fetch('/sales/bulk-update-status', {  
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            sale_ids: globalSelectedIds,
+            status: statusResult
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // JIKA TARGET KURIR BERBEDA (Klik Pilih Semua secara acak lintas kurir)
+            // Hanya update dashboard, jangan trigger redirect tab WhatsApp API
+            if (isMultiPartner) {
+                window.location.reload();
+                return;
+            }
+
+            // --- MODIFIKASI DISINI ---
+            // Logika WA HANYA berjalan jika status diubah ke 'dalam perjalanan'
+            if (statusResult === 'dalam perjalanan') {
+                let nomorHp = globalPartnerContact.trim();
+                if (nomorHp.startsWith('0')) {
+                    nomorHp = '62' + nomorHp.slice(1);
+                }
+
+                // Merangkai isi keseluruhan pesan WhatsApp sesuai spesifikasi template
+                let templateFullPesan = `Halo, ${globalPartnerName}.\n\n${globalTaskDetailsText}`;
+                let waFormattedText = rawurlencode(templateFullPesan);
+
+                if (nomorHp !== "" && nomorHp !== "-") {
+                    window.open(`https://wa.me/${nomorHp}?text=${waFormattedText}`, '_blank');
+                }
+            }
+            
+            // Apapun statusnya, setelah proses selesai akan reload halaman
+            window.location.reload();
+            // -------------------------
+
+        } else {
+            alert('Gagal memperbarui status: ' + data.message);
+            resetModalButton();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Terjadi kesalahan koneksi server.');
+        resetModalButton();
+    });
+}
+
+function resetModalButton() {
+    const submitBtn = document.getElementById('modal-submit-btn');
+    submitBtn.removeAttribute('disabled');
+    submitBtn.innerText = "Perbarui Status";
+}
+
+// Helper function untuk menyamakan sistem enkripsi URL bawaan PHP rawurlencode
+function rawurlencode(str) {
+    return encodeURIComponent(str)
+        .replace(/!/g, '%21')
+        .replace(/'/g, '%27')
+        .replace(/\(/g, '%28')
+        .replace(/\)/g, '%29')
+        .replace(/\*/g, '%2A');
+}
+
+
+
+
+
+document.addEventListener('DOMContentLoaded', function () {
+    const driverSelect = document.getElementById('driver_name');
+    const driverPhoneInput = document.getElementById('driver_phone');
+
+    if (driverSelect && driverPhoneInput) {
+        driverSelect.addEventListener('change', function () {
+            // Ambil option yang sedang aktif/dipilih
+            const selectedOption = this.options[this.selectedIndex];
+            // Ambil data-phone dari atribut option tersebut
+            const phoneNumber = selectedOption.getAttribute('data-phone');
+
+            if (phoneNumber) {
+                driverPhoneInput.value = phoneNumber;
+            } else {
+                driverPhoneInput.value = ''; // Kosongkan jika memilih default opsi kembali
+            }
+        });
+    }
+});
 </script>
 @endpush

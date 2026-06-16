@@ -3,15 +3,16 @@
 <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
     <div class="px-8 py-4 border-b border-slate-100 bg-slate-50/30 flex flex-wrap items-center justify-between gap-4">
         <div class="flex items-center gap-3">
-            <input type="checkbox" id="select-all-sales" class="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+            <input type="checkbox" id="select-all-sales" class="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer" onchange="toggleSelectAllGlobal(this)">
             <label for="select-all-sales" class="text-xs font-bold text-slate-500 uppercase tracking-wider">Pilih Semua untuk Pengiriman Bulk</label>
         </div>
         <div class="flex items-center gap-3">
-            <button type="button" onclick="bulkMarkAsDelivering()" id="bulk-delivery-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-sm shadow-blue-100">
-                Kirim yang Dipilih
+            <button type="button" onclick="bulkMarkAsDelivering()" id="bulk-delivery-btn" disabled class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-sm shadow-blue-100">
+                Kirim yang Dipilih (<span id="selected-count">0</span>)
             </button>
         </div>
     </div>
+    
     <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
             <thead>
@@ -24,182 +25,196 @@
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
-                {{-- A. LOOPING MITRA RESTORAN RESMI --}}
-                @forelse($partners as $partner)
-                    <tr class="hover:bg-slate-50/40 transition-colors cursor-pointer" onclick="toggleDeliveryRow({{ $partner->id }})">
-                        <td class="px-6 py-6 text-center">
-                            <button type="button" id="icon-arrow-{{ $partner->id }}" class="text-slate-400 transition-transform duration-200">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
+    {{-- A. LOOPING MITRA RESTORAN RESMI --}}
+    @forelse($partners as $partner)
+        <tr class="hover:bg-slate-50/40 transition-colors cursor-pointer" onclick="toggleDeliveryRow({{ $partner->id }})">
+            <td class="px-6 py-6 text-center">
+                <button type="button" id="icon-arrow-{{ $partner->id }}" class="text-slate-400 transition-transform duration-200">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+            </td>
+            <td class="px-6 py-6 font-bold text-slate-700">
+                {{ $partner->name }}
+                <span class="ml-2 px-2 py-0.5 text-[10px] font-bold rounded-md bg-slate-100 text-slate-600">
+                    {{ $partner->sales->count() }} Transaksi
+                </span>
+            </td>
+            <td class="px-6 py-6 text-sm font-medium text-slate-500">{{ $partner->contact ?: '-' }}</td>
+            <td class="px-6 py-6 text-sm font-medium text-slate-500">{{ $partner->address ?: '-' }}</td>
+            <td class="px-6 py-6 text-center" onclick="event.stopPropagation();">
+                <div class="flex items-center justify-center gap-2">
+                    <button type="button" class="open-sale-modal inline-flex items-center justify-center w-11 h-11 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl shadow-lg shadow-emerald-200 transition-all" data-partner-id="{{ $partner->id }}" data-partner-name="{{ $partner->name }}" title="Input Penjualan">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M12 5v14m7-7H5"></path></svg>
+                    </button>
+                    
+                    @if(auth()->user()?->isOwner())
+                        <button type="button" onclick="openEditPartnerModal({{ $partner->id }}, '{{ addslashes($partner->name) }}', '{{ addslashes($partner->contact) }}', '{{ addslashes($partner->address) }}')" class="inline-flex items-center justify-center w-11 h-11 text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded-2xl transition-all" title="Edit">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                        </button>
+                        <form action="{{ route('partners.destroy', $partner) }}" method="POST" onsubmit="return confirm('Hapus pelanggan ini?')">
+                            @csrf @method('DELETE')
+                            <button type="submit" class="inline-flex items-center justify-center w-11 h-11 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-2xl transition-all" title="Hapus">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.895-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                             </button>
-                        </td>
-                        <td class="px-6 py-6 font-bold text-slate-700">
-                            {{ $partner->name }}
-                            <span class="ml-2 px-2 py-0.5 text-[10px] font-bold rounded-md bg-slate-100 text-slate-600">
-                                {{ $partner->sales->count() }} Transaksi
-                            </span>
-                        </td>
-                        <td class="px-6 py-6 text-sm font-medium text-slate-500">{{ $partner->contact ?: '-' }}</td>
-                        <td class="px-6 py-6 text-sm font-medium text-slate-500">{{ $partner->address ?: '-' }}</td>
-                        <td class="px-6 py-6 text-center" onclick="event.stopPropagation();">
-                            <div class="flex items-center justify-center gap-2">
-                                <button
-                                    type="button"
-                                    class="open-sale-modal inline-flex items-center justify-center w-11 h-11 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl shadow-lg shadow-emerald-200 transition-all"
-                                    data-partner-id="{{ $partner->id }}"
-                                    data-partner-name="{{ $partner->name }}"
-                                    title="Input Penjualan"
-                                >
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M12 5v14m7-7H5"></path></svg>
-                                </button>
-                                
-                                @if(auth()->user()?->isOwner())
-                                    <button
-                                        type="button"
-                                        onclick="openEditPartnerModal({{ $partner->id }}, '{{ addslashes($partner->name) }}', '{{ addslashes($partner->contact) }}', '{{ addslashes($partner->address) }}')"
-                                        class="inline-flex items-center justify-center w-11 h-11 text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded-2xl transition-all"
-                                        title="Edit"
-                                    >
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                                    </button>
-                                    <form action="{{ route('partners.destroy', $partner) }}" method="POST" onsubmit="return confirm('Hapus pelanggan ini?')">
-                                        @csrf @method('DELETE')
-                                        <button type="submit" class="inline-flex items-center justify-center w-11 h-11 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-2xl transition-all" title="Hapus">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.895-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                        </button>
-                                    </form>
-                                @endif
-                            </div>
-                        </td>
-                    </tr>
+                        </form>
+                    @endif
+                </div>
+            </td>
+        </tr>
 
-                    {{-- SUB-TABLE DETAIL RESTORAN --}}
-                    <tr id="delivery-row-{{ $partner->id }}" class="hidden bg-slate-50/60">
-                        <td colspan="5" class="px-8 py-4 border-t border-b border-slate-100">
-                            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-inner overflow-hidden p-2">
-                                <table class="w-full text-left text-sm">
-                                    <thead>
-                                        <tr class="border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                                            <th class="px-4 py-3 w-10">
-                                                <input type="checkbox" class="partner-sale-checkbox w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer" data-partner-id="{{ $partner->id }}">
-                                            </th>
-                                            <th class="px-4 py-3">Tanggal</th>
-                                            <th class="px-4 py-3">Tipe Seafood</th>
-                                            <th class="px-4 py-3">Pengantar</th>
-                                            <th class="px-4 py-3">Jumlah (Kg)</th>
-                                            <th class="px-4 py-3">Status</th>
-                                            <th class="px-4 py-3">Bukti</th>
-                                            <th class="px-4 py-3 text-center">Aksi</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-slate-50">
-                                        @forelse($partner->sales as $sale)
-                                            <tr class="hover:bg-slate-50/50 transition-colors text-slate-600">
-                                                <td class="px-4 py-3.5 w-10">
-                                                    @if($sale->status === 'sedang diproses')
-                                                        <input 
-                                                            type="checkbox" 
-                                                            class="sale-checkbox w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer" 
-                                                            data-sale-id="{{ $sale->id }}"
-                                                            data-driver-name="{{ $sale->driver_name }}"
-                                                            data-driver-phone="{{ $sale->driver_phone }}"
-                                                            data-buyer-name="{{ $partner->name ?? $sale->buyer_name }}"
-                                                            data-buyer-address="{{ $partner->address ?? '' }}"
-                                                            data-category-name="{{ $sale->category->name ?? '-' }}"
-                                                            data-quantity="{{ $sale->quantity_sold_kg }}"
-                                                        >
-                                                    @endif
-                                                </td>
-                                                @include('sales.sale-detail-row')
-                                            </tr>
-                                        @empty
-                                            <tr>
-                                                <td colspan="8" class="px-4 py-6 text-center text-xs text-slate-400 italic">Belum ada riwayat pembelian seafood untuk restoran ini.</td>
-                                            </tr>
-                                        @endforelse
-                                    </tbody>
-                                </table>
-                            </div>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="5" class="px-8 py-12 text-center text-slate-400 font-medium italic">Belum ada data restoran.</td>
-                    </tr>
-                @endforelse
+        {{-- SUB-TABLE DETAIL RESTORAN --}}
+        <tr id="delivery-row-{{ $partner->id }}" class="hidden bg-slate-50/60">
+            <td colspan="5" class="px-8 py-4 border-t border-b border-slate-100">
+                <div class="bg-white rounded-2xl border border-slate-200/80 shadow-inner overflow-hidden p-2">
+                    <table class="w-full text-left text-sm">
+                        <thead>
+                            <tr class="border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                <th class="px-4 py-3 w-10">
+                                    <input type="checkbox" class="partner-sale-checkbox w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer" data-partner-id="{{ $partner->id }}" onchange="toggleSelectAllPartner('{{ $partner->id }}', this)">
+                                </th>
+                                <th class="px-4 py-3">Tanggal</th>
+                                <th class="px-4 py-3">Tipe Seafood</th>
+                                <th class="px-4 py-3">Pengantar</th>
+                                <th class="px-4 py-3">Jumlah (Kg)</th>
+                                <th class="px-4 py-3">Status</th>
+                                <th class="px-4 py-3">Bukti</th>
+                                <th class="px-4 py-3 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-50">
+                            @forelse($partner->sales as $sale)
+                                <tr class="hover:bg-slate-50/50 transition-colors text-slate-600">
+                                    <td class="px-4 py-3.5 w-10">
+                                        {{-- MODIFIKASI: Checkbox hanya hidup / muncul jika status BUKAN selesai --}}
+                                        @if($sale->status !== 'selesai')
+                                            @php
+                                                $bulkDriverPhone = preg_replace('/[^0-9]/', '', $sale->driver_phone ?? '');
+                                                if (!empty($bulkDriverPhone)) {
+                                                    if (strpos($bulkDriverPhone, '0') === 0) {
+                                                        $bulkDriverPhone = '62' . substr($bulkDriverPhone, 1);
+                                                    } elseif (strpos($bulkDriverPhone, '8') === 0) {
+                                                        $bulkDriverPhone = '62' . $bulkDriverPhone;
+                                                    }
+                                                }
+                                            @endphp
+                                            <input 
+                                                type="checkbox" 
+                                                class="sale-checkbox partner-{{ $partner->id }}-sales w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer" 
+                                                data-sale-id="{{ $sale->id }}"
+                                                data-partner-name="{{ $sale->driver_name ?? 'Pengantar' }}"
+                                                data-partner-contact="{{ $bulkDriverPhone }}"
+                                                data-store-name="{{ $partner->name ?? $sale->buyer_name }}"
+                                                data-item-name="{{ $sale->category->name ?? '-' }}"
+                                                data-item-qty="{{ number_format($sale->quantity_sold_kg, 2) }} Kg"
+                                                data-proof-link="{{ route('delivery.input', $sale->id) }}"
+                                                onchange="updateBulkButtonState()"
+                                            >
+                                        @else
+                                            {{-- Opsional: Tampilkan icon lock atau kosongkan jika sudah selesai --}}
+                                            <span class="text-slate-300 text-xs">✓</span>
+                                        @endif
+                                    </td>
+                                    @include('sales.sale-detail-row')
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="8" class="px-4 py-6 text-center text-xs text-slate-400 italic">Belum ada riwayat pembelian seafood untuk restoran ini.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </td>
+        </tr>
+    @empty
+        <tr>
+            <td colspan="5" class="px-8 py-12 text-center text-slate-400 font-medium italic">Belum ada data restoran.</td>
+        </tr>
+    @endforelse
 
-                {{-- B. LOGIKA TAMBAHAN: KHUSUS PEMBELI ECERAN UMUM (PARTNER ID = NULL) --}}
-                @php
-                    // Mengambil penjualan yang tidak terikat partner manapun (seperti Jekson)
-                    $retailSales = \App\Models\Sale::whereNull('partner_id')->get();
-                @endphp
+    {{-- B. LOGIKA TAMBAHAN: KHUSUS PEMBELI ECERAN UMUM (PARTNER ID = NULL) --}}
+    @php
+        $retailSales = \App\Models\Sale::whereNull('partner_id')->get();
+    @endphp
 
-                @if($retailSales->count() > 0)
-                    {{-- Row Kepala Grup Eceran --}}
-                    <tr class="hover:bg-slate-50/40 transition-colors cursor-pointer" onclick="toggleDeliveryRow('retail-group')">
-                        <td class="px-6 py-6 text-center">
-                            <button type="button" id="icon-arrow-retail-group" class="text-slate-400 transition-transform duration-200">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
-                            </button>
-                        </td>
-                        <td class="px-6 py-6 font-bold text-amber-600">
-                            Penjualan Eceran (Umum / Walk-in)
-                            <span class="ml-2 px-2 py-0.5 text-[10px] font-bold rounded-md bg-amber-50 text-amber-700 border border-amber-100">
-                                {{ $retailSales->count() }} Transaksi
-                            </span>
-                        </td>
-                        <td class="px-6 py-6 text-sm font-medium text-slate-400">Multi Kontak</td>
-                        <td class="px-6 py-6 text-sm font-medium text-slate-400">Luar Toko / Langsung</td>
-                        <td class="px-6 py-6 text-center text-xs text-slate-400 italic">-</td>
-                    </tr>
+    @if($retailSales->count() > 0)
+        <tr class="hover:bg-slate-50/40 transition-colors cursor-pointer" onclick="toggleDeliveryRow('retail-group')">
+            <td class="px-6 py-6 text-center">
+                <button type="button" id="icon-arrow-retail-group" class="text-slate-400 transition-transform duration-200">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+            </td>
+            <td class="px-6 py-6 font-bold text-amber-600">
+                Penjualan Eceran (Umum / Walk-in)
+                <span class="ml-2 px-2 py-0.5 text-[10px] font-bold rounded-md bg-amber-50 text-amber-700 border border-amber-100">
+                    {{ $retailSales->count() }} Transaksi
+                </span>
+            </td>
+            <td class="px-6 py-6 text-sm font-medium text-slate-400">Multi Kontak</td>
+            <td class="px-6 py-6 text-sm font-medium text-slate-400">Luar Toko / Langsung</td>
+            <td class="px-6 py-6 text-center text-xs text-slate-400 italic">-</td>
+        </tr>
 
-                    {{-- SUB-TABLE DETAIL KHUSUS TRANSAKSI ECERAN --}}
-                    <tr id="delivery-row-retail-group" class="hidden bg-slate-50/60">
-                        <td colspan="5" class="px-8 py-4 border-t border-b border-slate-100">
-                            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-inner overflow-hidden p-2">
-                                <table class="w-full text-left text-sm">
-                                    <thead>
-                                        <tr class="border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                                            <th class="px-4 py-3 w-10">
-                                                <input type="checkbox" class="partner-sale-checkbox w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer" data-partner-id="retail-group">
-                                            </th>
-                                            <th class="px-4 py-3">Tanggal</th>
-                                            <th class="px-4 py-3">Nama Pembeli & Jenis</th>
-                                            <th class="px-4 py-3">Pengantar</th>
-                                            <th class="px-4 py-3">Jumlah (Kg)</th>
-                                            <th class="px-4 py-3">Status</th>
-                                            <th class="px-4 py-3">Bukti</th>
-                                            <th class="px-4 py-3 text-center">Aksi</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-slate-50">
-                                        @foreach($retailSales as $sale)
-                                            <tr class="hover:bg-slate-50/50 transition-colors text-slate-600">
-                                                <td class="px-4 py-3.5 w-10">
-                                                    @if($sale->status === 'sedang diproses')
-                                                        <input 
-                                                            type="checkbox" 
-                                                            class="sale-checkbox w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer" 
-                                                            data-sale-id="{{ $sale->id }}"
-                                                            data-driver-name="{{ $sale->driver_name }}"
-                                                            data-driver-phone="{{ $sale->driver_phone }}"
-                                                            data-buyer-name="{{ $sale->buyer_name }}"
-                                                            data-buyer-address=""
-                                                            data-category-name="{{ $sale->category->name ?? '-' }}"
-                                                            data-quantity="{{ $sale->quantity_sold_kg }}"
-                                                        >
-                                                    @endif
-                                                </td>
-                                                @include('sales.sale-detail-row')
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        </td>
-                    </tr>
-                @endif
-
-            </tbody>
+        <tr id="delivery-row-retail-group" class="hidden bg-slate-50/60">
+            <td colspan="5" class="px-8 py-4 border-t border-b border-slate-100">
+                <div class="bg-white rounded-2xl border border-slate-200/80 shadow-inner overflow-hidden p-2">
+                    <table class="w-full text-left text-sm">
+                        <thead>
+                            <tr class="border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                <th class="px-4 py-3 w-10">
+                                    <input type="checkbox" class="partner-sale-checkbox w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer" data-partner-id="retail-group" onchange="toggleSelectAllPartner('retail-group', this)">
+                                </th>
+                                <th class="px-4 py-3">Tanggal</th>
+                                <th class="px-4 py-3">Nama Pembeli & Jenis</th>
+                                <th class="px-4 py-3">Pengantar</th>
+                                <th class="px-4 py-3">Jumlah (Kg)</th>
+                                <th class="px-4 py-3">Status</th>
+                                <th class="px-4 py-3">Bukti</th>
+                                <th class="px-4 py-3 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-50">
+                            @foreach($retailSales as $sale)
+                                <tr class="hover:bg-slate-50/50 transition-colors text-slate-600">
+                                    <td class="px-4 py-3.5 w-10">
+                                        {{-- MODIFIKASI: Checkbox hanya hidup / muncul jika status BUKAN selesai --}}
+                                        @if($sale->status !== 'selesai')
+                                            @php
+                                                $bulkRetailDriverPhone = preg_replace('/[^0-9]/', '', $sale->driver_phone ?? '');
+                                                if (!empty($bulkRetailDriverPhone)) {
+                                                    if (strpos($bulkRetailDriverPhone, '0') === 0) {
+                                                        $bulkRetailDriverPhone = '62' . substr($bulkRetailDriverPhone, 1);
+                                                    } elseif (strpos($bulkRetailDriverPhone, '8') === 0) {
+                                                        $bulkRetailDriverPhone = '62' . $bulkRetailDriverPhone;
+                                                    }
+                                                }
+                                            @endphp
+                                            <input 
+                                                type="checkbox" 
+                                                class="sale-checkbox partner-retail-group-sales w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer" 
+                                                data-sale-id="{{ $sale->id }}"
+                                                data-partner-name="{{ $sale->driver_name ?? 'Pengantar' }}"
+                                                data-partner-contact="{{ $bulkRetailDriverPhone }}"
+                                                data-store-name="{{ $sale->buyer_name ?? 'Eceran Umum' }}"
+                                                data-item-name="{{ $sale->category->name ?? '-' }}"
+                                                data-item-qty="{{ number_format($sale->quantity_sold_kg, 2) }} Kg"
+                                                data-proof-link="{{ route('delivery.input', $sale->id) }}"
+                                                onchange="updateBulkButtonState()"
+                                            >
+                                        @else
+                                            <span class="text-slate-300 text-xs">✓</span>
+                                        @endif
+                                    </td>
+                                    @include('sales.sale-detail-row')
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </td>
+        </tr>
+    @endif
+</tbody>
         </table>
     </div>
 </div>

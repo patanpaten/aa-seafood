@@ -65,6 +65,7 @@ Route::middleware(['auth'])->group(function () {
             Route::patch('/{sale}', [SaleController::class, 'update'])->name('update');
             Route::delete('/{sale}', [SaleController::class, 'destroy'])->name('destroy');
             Route::post('/bulk-delivery', [SaleController::class, 'bulkDelivery'])->name('bulk-delivery');
+            Route::post('/bulk-update-status', [SaleController::class, 'bulkDelivery'])->name('bulk-update-status');
         });
 
 
