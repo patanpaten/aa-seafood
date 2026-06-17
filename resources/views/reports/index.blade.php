@@ -17,7 +17,6 @@
         </div>
     </div>
 
-    <!-- Filter Card -->
     <form method="GET" action="{{ route('reports.index') }}" class="grid grid-cols-1 md:grid-cols-6 gap-4 items-end mb-8 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
     
         <div>
@@ -83,7 +82,6 @@
         </div>
     @endif
 
-    <!-- Summary Grid -->
     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 mb-10">
         <div class="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden group hover:border-blue-200 transition-colors">
             <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
@@ -136,60 +134,132 @@
         </div>
     </div>
 
-    <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden mt-10">
-        <div class="px-8 py-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-            <h3 class="text-sm font-extrabold text-slate-900 uppercase tracking-widest">Detail Aktivitas</h3>
-            <span class="px-3 py-1 bg-white rounded-full text-[10px] font-bold text-slate-400 border border-slate-200 uppercase tracking-widest">Barang Masuk & Penjualan</span>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="bg-slate-50/20 border-b border-slate-100">
-                        <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Tanggal</th>
-                        <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Jenis</th>
-                        <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Group</th>
-                        <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Tempat / Pembeli</th>
-                        <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Barang</th>
-                        <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Qty</th>
-                        <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Harga Beli</th>
-                        <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Harga Jual</th>
-                        <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Total Transaksi</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-50">
-                    @forelse($reportData['activity_details'] as $item)
-                        <tr class="hover:bg-slate-50/50 transition-colors">
-                            <td class="px-6 py-5 text-sm font-medium text-slate-500">{{ $item['date'] }}</td>
-                            <td class="px-6 py-5">
-                                <span class="inline-flex items-center px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-widest {{ $item['type'] === 'Penjualan' ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600' }}">
-                                    {{ $item['type'] }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-5">
-                                <span class="inline-flex items-center px-3 py-2 bg-slate-100 text-slate-500 rounded-xl text-xs font-bold uppercase tracking-widest">
-                                    {{ $item['group_name'] }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-5 font-bold text-slate-700">{{ $item['party_name'] }}</td>
-                            <td class="px-6 py-5 text-sm font-medium text-slate-500">{{ $item['category_name'] }}</td>
-                            <td class="px-6 py-5 text-sm font-medium text-slate-500">{{ number_format($item['quantity'], 2) }} kg</td>
-                            <td class="px-6 py-5 text-sm font-bold text-amber-600">
-                                {{ $item['purchase_price_per_kg'] !== null ? 'Rp ' . number_format($item['purchase_price_per_kg'], 0, ',', '.') : '-' }}
-                            </td>
-                            <td class="px-6 py-5 text-sm font-bold text-emerald-600">
-                                {{ $item['sale_price_per_kg'] !== null ? 'Rp ' . number_format($item['sale_price_per_kg'], 0, ',', '.') : '-' }}
-                            </td>
-                            <td class="px-6 py-5 text-sm font-black text-slate-900">
-                                {{ $item['total_price'] !== null ? 'Rp ' . number_format($item['total_price'], 0, ',', '.') : '-' }}
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="9" class="px-6 py-10 text-center text-slate-400 font-medium italic">Belum ada aktivitas pada periode ini.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+    <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden mt-10" x-data="{ activeGroup: null }">
+    <div class="px-8 py-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+        <h3 class="text-sm font-extrabold text-slate-900 uppercase tracking-widest">Detail Aktivitas (Dikelompokkan)</h3>
+        <span class="px-3 py-1 bg-white rounded-full text-[10px] font-bold text-slate-400 border border-slate-200 uppercase tracking-widest">Klik Row Untuk Lihat Barang</span>
     </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-slate-50/20 border-b border-slate-100">
+                    <th class="w-10 px-6 py-4"></th>
+                    <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Jenis</th>
+                    <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Tempat / Pembeli</th>
+                    <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Total Item</th>
+                    <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Total Qty</th>
+                    <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">H. Beli (Avg)</th>
+                    <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">H. Jual (Avg)</th>
+                    <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Total Transaksi</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                @php
+                    $collectionDetails = collect($reportData['activity_details']);
+                    $groupedActivities = $collectionDetails->groupBy(function($item) {
+                        return $item['type'] . '-' . $item['party_name'];
+                    });
+                @endphp
+
+                @forelse($groupedActivities as $groupKey => $subItems)
+                    @php
+                        $firstItem = $subItems->first();
+                        $totalQty = $subItems->sum('quantity');
+                        $totalAmount = $subItems->sum('total_price');
+                        
+                        $avgPurchasePrice = $subItems->where('purchase_price_per_kg', '>', 0)->avg('purchase_price_per_kg');
+                        $avgSalePrice = $subItems->where('sale_price_per_kg', '>', 0)->avg('sale_price_per_kg');
+                        
+                        $loopId = 'group-' . $loop->index;
+                    @endphp
+                    
+                    <tr class="hover:bg-slate-50 cursor-pointer transition-colors" 
+                        @click="activeGroup = (activeGroup === '{{ $loopId }}' ? null : '{{ $loopId }}')">
+                        <td class="px-6 py-5 text-center">
+                            <svg class="w-4 h-4 text-slate-400 transition-transform duration-200" 
+                                 :class="activeGroup === '{{ $loopId }}' ? 'rotate-90' : ''"
+                                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </td>
+                        <td class="px-6 py-5">
+                            <span class="inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-bold uppercase tracking-widest {{ $firstItem['type'] === 'Penjualan' ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600' }}">
+                                {{ $firstItem['type'] }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-5 font-black text-slate-800 text-sm">
+                            {{ $firstItem['party_name'] }}
+                        </td>
+                        <td class="px-6 py-5 text-sm font-bold text-slate-500">
+                            {{ $subItems->count() }} Jenis Barang
+                        </td>
+                        <td class="px-6 py-5 text-sm font-black text-slate-600">
+                            {{ number_format($totalQty, 2) }} kg
+                        </td>
+                        <td class="px-6 py-5 text-sm font-bold text-amber-600">
+                            {{ $avgPurchasePrice ? 'Rp '.number_format($avgPurchasePrice, 0, ',', '.') : '-' }}
+                        </td>
+                        <td class="px-6 py-5 text-sm font-bold text-emerald-600">
+                            {{ $avgSalePrice ? 'Rp '.number_format($avgSalePrice, 0, ',', '.') : '-' }}
+                        </td>
+                        <td class="px-6 py-5 text-sm font-black text-slate-900">
+                            Rp {{ number_format($totalAmount, 0, ',', '.') }}
+                        </td>
+                    </tr>
+
+                    <tr x-show="activeGroup === '{{ $loopId }}'" 
+                        x-transition:enter="transition ease-out duration-200"
+                        x-transition:enter-start="opacity-0 transform -translate-y-2"
+                        x-transition:enter-end="opacity-100 transform translate-y-0"
+                        class="bg-slate-50/60">
+                        <td colspan="8" class="px-8 py-4"> 
+                            <div class="bg-white rounded-2xl border border-slate-200/60 shadow-inner overflow-hidden">
+                                <table class="w-full text-left">
+                                    <thead class="bg-slate-100/70 border-b border-slate-200">
+                                        <tr>
+                                            <th class="px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Tanggal</th>
+                                            <th class="px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Group</th>
+                                            <th class="px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Nama Barang</th>
+                                            <th class="px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Qty</th>
+                                            <th class="px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">H. Beli</th>
+                                            <th class="px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">H. Jual</th>
+                                            <th class="px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Subtotal</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100">
+                                        @foreach($subItems as $subItem)
+                                            <tr class="hover:bg-slate-50/80">
+                                                <td class="px-5 py-3.5 text-sm text-slate-500 font-medium">{{ $subItem['date'] }}</td>
+                                                <td class="px-5 py-3.5 text-sm">
+                                                    <span class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md font-medium text-xs">
+                                                        {{ $subItem['group_name'] }}
+                                                    </span>
+                                                </td>
+                                                <td class="px-5 py-3.5 text-sm font-bold text-slate-700">{{ $subItem['category_name'] }}</td>
+                                                <td class="px-5 py-3.5 text-sm text-slate-600 font-semibold">{{ number_format($subItem['quantity'], 2) }} kg</td>
+                                                <td class="px-5 py-3.5 text-sm font-bold text-amber-600">
+                                                    {{ $subItem['purchase_price_per_kg'] ? 'Rp '.number_format($subItem['purchase_price_per_kg'], 0, ',', '.') : '-' }}
+                                                </td>
+                                                <td class="px-5 py-3.5 text-sm font-bold text-emerald-600">
+                                                    {{ $subItem['sale_price_per_kg'] ? 'Rp '.number_format($subItem['sale_price_per_kg'], 0, ',', '.') : '-' }}
+                                                </td>
+                                                <td class="px-5 py-3.5 text-sm font-black text-slate-900">
+                                                    {{ $subItem['total_price'] ? 'Rp '.number_format($subItem['total_price'], 0, ',', '.') : '-' }}
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="8" class="px-6 py-10 text-center text-slate-400 font-medium italic">Belum ada aktivitas pada periode ini.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+</div>
 @endsection

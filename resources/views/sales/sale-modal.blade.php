@@ -86,30 +86,38 @@
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-dashed border-slate-200 pt-6">
-                        <div class="group">
-                            <label for="driver_name" class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1 transition-colors group-focus-within:text-blue-600">Nama Pengantar / Sopir</label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600 transition-colors">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                                </div>
-                                <input type="text" name="driver_name" id="driver_name" placeholder="Contoh: Pak Joko"
-                                    class="w-full pl-12 pr-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition font-semibold text-slate-700 placeholder:text-slate-300">
-                            </div>
-                        </div>
+    <div class="group">
+        <label for="driver_name" class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1 transition-colors group-focus-within:text-blue-600">Nama Pengantar / Sopir</label>
+        <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+            </div>
+            <select name="driver_name" id="driver_name" 
+                class="w-full pl-12 pr-10 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition font-semibold text-slate-700 appearance-none">
+                <option value="">-- Pilih Kurir / Sopir --</option>
+                <option value="Fatan" data-phone="6283819442738">Fatan</option>
+                <option value="Venta" data-phone="62882008021544">Venta</option>
+                <option value="Gyan" data-phone="6287875772919">Gyan</option>
+                <option value="Eki" data-phone="6282135664668">Eki</option>
+            </select>
+            <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-slate-400">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </div>
+        </div>
+    </div>
 
-                        <div class="group">
-                            <label for="driver_phone" class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1 transition-colors group-focus-within:text-emerald-600">No. WhatsApp Pengantar</label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-emerald-600 transition-colors">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
-                                </div>
-                                <input type="text" name="driver_phone" id="driver_phone" placeholder="Contoh: 628123456789"
-                                    class="w-full pl-12 pr-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition font-semibold text-slate-700 placeholder:text-slate-300">
-                                <p class="text-[10px] text-slate-400 mt-1 ml-1">*Gunakan format kode negara (misal: 62812...)</p>
-                            </div>
-                        </div>
-                    </div>
-
+    <div class="group">
+        <label for="driver_phone" class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1 transition-colors group-focus-within:text-emerald-600">No. WhatsApp Pengantar</label>
+        <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-emerald-600 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+            </div>
+            <input type="text" name="driver_phone" id="driver_phone" placeholder="Pilih sopir untuk mengisi nomor" readonly
+                class="w-full pl-12 pr-5 py-4 bg-slate-100 border border-slate-200 rounded-2xl outline-none transition font-semibold text-slate-500 cursor-not-allowed">
+            <p class="text-[10px] text-slate-400 mt-1 ml-1">*Nomor terisi otomatis menggunakan format kode negara 62.</p>
+        </div>
+    </div>
+</div>
                     <div class="p-6 bg-emerald-600 rounded-[2.5rem] shadow-xl shadow-emerald-200 relative overflow-hidden group">
                         <div class="absolute top-0 right-0 -mt-8 -mr-8 w-32 h-32 bg-white/5 rounded-full transition-transform group-hover:scale-150 duration-700"></div>
                         <div class="flex items-center justify-between relative z-10">

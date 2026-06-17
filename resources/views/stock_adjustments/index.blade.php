@@ -12,7 +12,6 @@
 
     <div id="stock-adjustment-feedback" class="hidden mb-8 rounded-2xl border px-5 py-4 text-sm font-semibold"></div>
 
-    <!-- Filter Card -->
     <form method="GET" action="{{ route('stock-adjustments.index') }}" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end mb-10 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
         <div>
             <label for="start_date" class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Dari Tanggal</label>
@@ -82,14 +81,13 @@
                         @php
                             $category = $categories->get($categoryId);
                             $categoryGlobal = $categoriesWithSum->get($categoryId);
-                            $rollingBalance = (float) ($initialBalances[$categoryId] ?? 0); // Mulai dari saldo sebelum filter
+                            $rollingBalance = (float) ($initialBalances[$categoryId] ?? 0);
                             
                             $globalSisa = ($categoryGlobal->incoming_stocks_sum_actual_weight ?? 0) 
                                         - ($categoryGlobal->sales_sum_quantity_sold_kg ?? 0) 
                                         + ($categoryGlobal->adjustments_sum_difference ?? 0);
                         @endphp
                         
-                        <!-- Header Kategori -->
                         <tr class="bg-slate-50/30">
                             <td colspan="8" class="px-8 py-4">
                                 <div class="flex items-center justify-between">
@@ -106,7 +104,6 @@
                                                 <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Sisa Stok Gudang</span>
                                                 <div class="group relative cursor-help">
                                                     <svg class="w-3 h-3 text-slate-300 hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                                    <!-- Tooltip Rincian -->
                                                     <div class="absolute bottom-full right-0 mb-2 w-48 hidden group-hover:block z-20">
                                                         <div class="bg-slate-900 text-white text-[10px] p-3 rounded-xl shadow-xl border border-white/10">
                                                             <p class="font-bold mb-2 border-b border-white/10 pb-1 uppercase tracking-wider text-blue-400">Rumus Perhitungan</p>
@@ -161,7 +158,6 @@
                             </td>
                         </tr>
 
-                        <!-- Baris Detail Stok Masuk -->
                         @foreach($stocks as $incoming)
                             @php
                                 $prevBalance = $rollingBalance;
@@ -193,10 +189,10 @@
                                 </td>
                                 <td class="px-8 py-4">
                                     <div class="flex justify-center gap-2">
-                                        <form action="{{ route('incoming-stocks.destroy', $incoming) }}" method="POST" class="inline-block">
+                                        <form id="delete-form-{{ $incoming->id }}" action="{{ route('incoming-stocks.destroy', $incoming) }}" method="POST" class="inline-block">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="w-9 h-9 flex items-center justify-center bg-white border border-slate-200 text-red-500 rounded-xl hover:bg-red-50 hover:border-red-200 transition-all shadow-sm" onclick="return confirm('Yakin ingin menghapus transaksi ini?')">
+                                            <button type="button" class="trigger-delete-confirm w-9 h-9 flex items-center justify-center bg-white border border-slate-200 text-red-500 rounded-xl hover:bg-red-50 hover:border-red-200 transition-all shadow-sm" data-form-id="delete-form-{{ $incoming->id }}">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                             </button>
                                         </form>
@@ -205,7 +201,6 @@
                             </tr>
                         @endforeach
                         
-                        <!-- Spacer row -->
                         <tr class="h-4"></tr>
                     @empty
                         <tr>
@@ -336,7 +331,7 @@
                                 <label for="stock_adjustment_actual_stock" class="block text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-2 ml-1">Stok Hasil Hitung</label>
                                 <div class="relative">
                                     <input type="number" step="0.01" min="0" name="actual_stock" id="stock_adjustment_actual_stock" placeholder="0.00"
-                                        class="w-full bg-transparent text-3xl font-black text-orange-600 outline-none placeholder-orange-200" required>
+                                           class="w-full bg-transparent text-3xl font-black text-orange-600 outline-none placeholder-orange-200" required>
                                     <span class="absolute right-0 top-1/2 -translate-y-1/2 text-sm font-bold text-orange-300 uppercase">kg</span>
                                 </div>
                             </div>
@@ -345,7 +340,7 @@
                         <div>
                             <label for="stock_adjustment_reason" class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">Catatan</label>
                             <textarea name="reason" id="stock_adjustment_reason" rows="3" placeholder="Contoh: barang rusak, salah hitung, atau alasan lain"
-                                class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition font-semibold text-slate-700" required></textarea>
+                                      class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition font-semibold text-slate-700" required></textarea>
                         </div>
 
                         <div class="flex flex-col sm:flex-row gap-4">
@@ -361,6 +356,7 @@
             </div>
         </div>
     </div>
+@include('stock_adjustments.delete-confirm-modal')
 @endsection
 
 @push('scripts')
@@ -466,6 +462,53 @@
                 submitButton.textContent = 'Simpan Hasil Cek';
             }
         });
+
+
+        // --- LOGIK MODAL KONFIRMASI HAPUS BARU ---
+        const deleteModal = document.getElementById('delete-confirmation-modal');
+        const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+        const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+        const backdropDeleteBtn = document.getElementById('close-delete-modal-backdrop');
+        let currentFormToSubmit = null;
+
+        function openDeleteModal(formId) {
+            currentFormToSubmit = document.getElementById(formId);
+            if (currentFormToSubmit) {
+                deleteModal.classList.remove('hidden');
+                document.body.classList.add('overflow-hidden');
+            }
+        }
+
+        function closeDeleteModal() {
+            deleteModal.classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+            currentFormToSubmit = null;
+        }
+
+        // Tambah listener ke seluruh button trash di baris tabel
+        document.querySelectorAll('.trigger-delete-confirm').forEach((button) => {
+            button.addEventListener('click', function (e) {
+                e.preventDefault();
+                const formId = this.getAttribute('data-form-id');
+                openDeleteModal(formId);
+            });
+        });
+
+        // Eksekusi kirim form jika disetujui
+        confirmDeleteBtn.addEventListener('click', function () {
+            if (currentFormToSubmit) {
+                currentFormToSubmit.submit();
+            }
+        });
+
+        // Event menutup modal hapus
+        cancelDeleteBtn.addEventListener('click', closeDeleteModal);
+        backdropDeleteBtn.addEventListener('click', closeDeleteModal);
+
     });
+
+
+
+    
 </script>
 @endpush

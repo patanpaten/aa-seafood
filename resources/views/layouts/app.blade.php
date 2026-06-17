@@ -2,7 +2,8 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/jpeg" href="{{ asset('logo.jpeg') }}">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title') - AA Seafood</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -44,11 +45,10 @@
     <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'" class="fixed inset-y-0 left-0 w-64 bg-white border-r border-slate-200 z-50 lg:translate-x-0 transition-transform duration-300 ease-in-out shadow-sm">
         <div class="h-full flex flex-col p-6">
             <div class="flex items-center space-x-3 mb-10">
-                <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
-                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
-                </div>
-                <span class="font-extrabold text-xl tracking-tighter text-slate-900 uppercase">AA Seafood</span>
-            </div>
+    <img src="{{ asset('logo.jpeg') }}" alt="Logo AA Seafood" class="w-10 h-10 object-cover rounded-xl shadow-lg shadow-blue-100">
+    
+    <span class="font-extrabold text-xl tracking-tighter text-slate-900 uppercase">AA Seafood</span>
+</div>
 
             <nav class="flex-1 space-y-1 overflow-y-auto pr-2 custom-scrollbar">
                 <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 ml-3">Menu Utama</p>

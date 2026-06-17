@@ -7,26 +7,34 @@ use App\Models\Partner;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class SaleController extends Controller
 {
     public function create()
-    {
-        $partners = Partner::orderBy('name')->get();
-        $categories = Category::query()
-            ->orderBy('group_name')
-            ->orderBy('name')
-            ->get();
-            
-        $groupedCategories = $categories->groupBy(fn ($category) => $category->display_group_name ?: 'Lainnya');
+{
+    $partners = Partner::orderBy('name')->get();
+    
+    $categories = Category::query()
+        ->orderBy('group_name')
+        ->orderBy('name')
+        ->get()
+        ->map(function ($category) {
+            $category->current_stock = $category->current_stock; 
+            return $category;
+        });
+        
+    $groupedCategories = $categories->groupBy(fn ($category) => $category->display_group_name ?: 'Lainnya');
 
-        return view('penjualan', compact(
-            'partners',
-            'categories',
-            'groupedCategories'
-        ));
-    }
+    return view('penjualan', compact(
+        'partners',
+        'categories',
+        'groupedCategories'
+    ));
+}
+
+
 
     public function store(Request $request)
     {
@@ -137,26 +145,64 @@ class SaleController extends Controller
         return redirect()->back()->with('success', 'Status pesanan berhasil diperbarui menjadi: ' . $validated['status']);
     }
 
-    public function bulkDelivery(Request $request)
-    {
-        $validated = $request->validate([
-            'sale_ids' => 'required|array',
-            'sale_ids.*' => 'exists:sales,id',
-        ]);
 
-        $count = 0;
+public function bulkDelivery(Request $request)
+{
+    $validated = $request->validate([
+        'sale_ids' => 'required|array',
+        'sale_ids.*' => 'exists:sales,id',
+        'status' => 'required|in:dalam perjalanan,selesai',
+    ]);
+
+    $statusTujuan = $validated['status'];
+    $count = 0;
+
+    DB::transaction(function () use ($validated, $statusTujuan, &$count) {
         foreach ($validated['sale_ids'] as $saleId) {
             $sale = Sale::find($saleId);
-            if ($sale && $sale->status === 'sedang diproses') {
-                $sale->update(['status' => 'dalam perjalanan']);
+            
+            // MODIFIKASI: Izinkan status 'sedang diproses' ATAU 'dalam perjalanan' untuk diupdate
+            if ($sale && ($sale->status === 'sedang diproses' || $sale->status === 'dalam perjalanan')) {
+                $sale->update(['status' => $statusTujuan]);
                 $count++;
             }
         }
+    });
 
-        return response()->json([
-            'message' => "Berhasil menandai {$count} transaksi sebagai dalam perjalanan!"
-        ]);
-    }
+    return response()->json([
+        'success' => true,
+        'message' => "Berhasil menandai {$count} transaksi sebagai " . ($statusTujuan === 'selesai' ? 'Selesai!' : 'Dalam Perjalanan!')
+    ], 200);
+}
+
+  public function bulkUpdateStatus(Request $request)
+{
+    $validated = $request->validate([
+        'sale_ids' => 'required|array',
+        'sale_ids.*' => 'exists:sales,id',
+        'status' => 'required|in:dalam perjalanan,selesai',
+    ]);
+
+    $statusTujuan = $validated['status'];
+    $count = 0;
+
+    DB::transaction(function () use ($validated, $statusTujuan, &$count) {
+        foreach ($validated['sale_ids'] as $saleId) {
+            $sale = Sale::find($saleId);
+            
+            // MODIFIKASI: Izinkan status 'sedang diproses' ATAU 'dalam perjalanan' untuk diupdate
+            if ($sale && ($sale->status === 'sedang diproses' || $sale->status === 'dalam perjalanan')) {
+                $sale->update(['status' => $statusTujuan]);
+                $count++;
+            }
+        }
+    });
+
+    return response()->json([
+        'success' => true,
+        'message' => "Berhasil menandai {$count} transaksi sebagai " . ($statusTujuan === 'selesai' ? 'Selesai!' : 'Dalam Perjalanan!')
+    ], 200);
+}
 
 
 public function update(Request $request, Sale $sale)
